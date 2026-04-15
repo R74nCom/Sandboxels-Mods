@@ -1,36 +1,14 @@
-
-elements.heatburst = {
-    color: "#cccccc",
-    behavior: [
-    "XX|HT:30|XX",
-    "HT:30|DL|HT:30",
-    "XX|HT:30|XX",
-    ],
-    category: "hendrik",
-    insulate: "true"
-}
-
-elements.nuclei = {
+elements.primedu235 = {
      color: "#34eb6e",
      behavior: [
-        "XX|M1|XX",
-        "M1|XX|M1",
-        "XX|M1|XX",
-    ],
-    category: "hendrik",
-    state: "solid"
-}
-elements.primedu235 = {
-     color: "#cccccc",
-     behavior: [
-        "XX|CR:nuclei AND CH:uranium235>primedu235|XX",
-        "CR:nuclei AND CH:uranium235>primedu235|XX|CR:nuclei AND CH:uranium235>primedu235",
-        "XX|CR:nuclei AND CH:uranium235>primedu235|XX",
+        "XX|CR:neutron AND CH:uranium235>primedu235|XX",
+        "CR:neutron AND CH:uranium235>primedu235|XX|CR:neutron AND CH:uranium235>primedu235",
+        "XX|CR:neutron AND CH:uranium235>primedu235|XX",
     ],
     reactions: {
-        "nuclei": {elem1:"primedu235", elem2:"heatburst" },
+        "neutron": {temp1: 50, elem2:null },
     },
-    category: "hendrik",
+    category: "reactortools",
     state: "solid",
     stateHigh: "pn_explosion",
     tempHigh: 7000
@@ -44,10 +22,9 @@ elements.uranium235 = {
         "XX|CR:radiation%1|XX",
     ],
     reactions: {
-        "nuclei": { elem1:"primedu235", elem2:"heatburst" },
-        "primedu235": { elem1:"primedu235", elem2:"primedu235" },
+        "neutron": { elem1:"primedu235", elem2:null, temp1:50 }
     },
-    category: "hendrik",
+    category: "reactortools",
     state: "solid"
 }
 elements.reactorcoolant = {
@@ -57,7 +34,7 @@ elements.reactorcoolant = {
         "CO:10|XX|CO:10 AND M2 AND BO",
         "XX|M1 AND CO:10|XX",
     ],
-    category: "hendrik",
+    category: "reactortools",
     state: "liquid",
     temp: -50,
     stateHigh: "steam",
@@ -67,7 +44,7 @@ elements.reactoroverheatcooler = {
     color: "#01216b",
     behavior: behaviors.WALL,
     conduct: 1,
-    category: "hendrik",
+    category: "reactortools",
     behaviorOn: [
         "XX|CO:30|XX",
         "CO:30|XX|CO:30",
@@ -84,7 +61,7 @@ elements.coolantpump = {
         "CR:reactorcoolant|CO:10|CR:reactorcoolant",
         "XX|CR:reactorcoolant|XX",
         ],
-    category: "hendrik",
+    category: "reactortools",
     state: "solid",
     insulate: true
 }
@@ -93,7 +70,7 @@ elements.overheatsensor = {
    
 	color: "#ff0000",
     conduct: 0.1,
-    category:"hendrik",
+    category:"reactortools",
 	behavior: behaviors.WALL,
 	
 	onSelect: function(pixel){
