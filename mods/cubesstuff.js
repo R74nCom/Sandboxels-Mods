@@ -64,6 +64,22 @@ Technical:
     New helpers for squareCoords and adjacentCoords
     Rainbow color preset
 */
+
+/**
+ * Ensures element reactions exist (mutates GameElement if needed)
+ * @param {GameElement} elemDef
+ * @returns {Record<string, ElementReaction>}
+ */
+function ensureReactions(elemDef) {
+    if (typeof elemDef !== "object" || elemDef === null) {
+        console.warn("ensureReactions: invalid element", elemDef);
+        return Object.create(null);
+    };
+    if (!elemDef.reactions) elemDef.reactions = {}
+    return elemDef.reactions
+}
+
+/** @type {Record<string, any>}*/
 let globals = {
     circleRad: 7,
     circleElem: "wood",
@@ -106,7 +122,11 @@ elements.button = {
     }
 }
 
-
+/**
+ * 
+ * @param {Pixel} pixel 
+ * @returns 
+ */
 function isPressable(pixel) {
     if (elements[pixel.element].pressInto !== undefined) return true;
 }
@@ -127,8 +147,10 @@ elements.aerogel = {
     }
 }
 
+// @ts-ignore
 let oldCopperReactions = elements.copper.reactions
-elements.molten_copper.reactions.molten_aluminum = { elem1: "molten_nordic_gold", elem2: null, chance: 0.5 }
+ensureReactions(elements.molten_copper).molten_aluminum = { elem1: "molten_nordic_gold", elem2: null, chance: 0.5 }
+if (!elements?.acid?.ignore) elements.acid.ignore = []
 elements.acid.ignore.push("nordic_gold")
 elements.acid.ignore.push("nordic_gold_coin")
 
@@ -202,9 +224,11 @@ elements.disco_ball = {
     state: "solid"
 }
 
-elements.molten_iron.reactions.sulfur = { elem1: "pyrite", elem2: null, chance: 0.25 }
-elements.molten_iron.reactions.molten_sulfur = { elem1: "pyrite", elem2: null, chance: 0.25 }
-elements.molten_iron.reactions.sulfur_gas = { elem1: "pyrite", elem2: null, chance: 0.25 }
+const molten_iron_reactions = ensureReactions(elements.molten_iron)
+
+molten_iron_reactions.sulfur = { elem1: "pyrite", elem2: null, chance: 0.25 }
+molten_iron_reactions.molten_sulfur = { elem1: "pyrite", elem2: null, chance: 0.25 }
+molten_iron_reactions.sulfur_gas = { elem1: "pyrite", elem2: null, chance: 0.25 }
 
 elements.cubesstuff_pyrite = {
     color: ["#d8c25e", "#bbaa49", "#998f3e"],
@@ -231,9 +255,9 @@ elements.fire_extinguisher_powder = {
             var coords = adjacentCoords[i];
             var x = pixel.x + coords[0];
             var y = pixel.y + coords[1];
-            if (getPixel(x, y)?.burning === true) {
-                let elem = getPixel(x, y)
-                elem.burning = false
+            const current = getPixel(x, y)
+            if (current?.burning === true) {
+                current.burning = false
             }
         }
     },
@@ -315,6 +339,9 @@ elements.gasoline = {
 }
 
 // Make molten sulfur stinky
+/**
+ * @param {Pixel} pixel
+ */
 elements.molten_sulfur.tick = function (pixel) {
     for (var i = 0; i < adjacentCoords.length; i++) {
         var coords = adjacentCoords[i];
@@ -339,13 +366,8 @@ elements.disco_floor = {
     behavior: behaviors.WALL,
     state: "solid",
     tick: function (pixel) {
-        pixel.changeCd ??= 20;
-        pixel.changeCd--;
-
-        if (pixel.changeCd <= 0) {
-            let colors = elements.disco_floor.color;
-            pixel.color = colors[Math.floor(Math.random() * colors.length)];
-            pixel.changeCd = 20;
+        if (pixelTicks % 20 === 0) {
+            pixel.color = choose(rainbowColor);
         }
     }
 };
@@ -358,7 +380,7 @@ elements.moss = {
             var coords = squareCoords[i];
             var x = pixel.x + coords[0];
             var y = pixel.y + coords[1];
-            if (isEmpty(x, y) && Math.random() <= 0.01 && getPixel(pixel.x, pixel.y + 1) && getPixel(pixel.x, pixel.y + 1).element !== "moss") {
+            if (isEmpty(x, y) && Math.random() <= 0.01 && getPixel(pixel.x, pixel.y + 1) && getPixel(pixel.x, pixel.y + 1)?.element !== "moss") {
                 createPixel('moss', x, y)
             }
         }
@@ -446,6 +468,11 @@ elements.cardboard = {
 
 elements.paper.pressInto = "cardboard"
 
+/**
+ * 
+ * @param {Pixel} pixel 
+ * @returns 
+ */
 function pressPixel(pixel) {
     if (elements[pixel.element].pressInto === undefined) { return; }
     // if it is an array, choose a random item, else just use the value
@@ -488,12 +515,13 @@ elements.press = {
             }
         }
         if (elements[pixel.element].onPress !== undefined) {
+            // @ts-ignore
             elements[pixel.element].onPress(pixel)
         }
     }
 }
 
-elements.malware.reactions.wire = { elem2: [null, "faulty_wire"], chance: 0.01 };
+ensureReactions(elements.malware).wire = { elem2: [null, "faulty_wire"], chance: 0.01 };
 
 elements.faulty_wire = {
     color: ["#4d0a03", "#4d0a03", "#4d0a03", "#4d0a03", "#4d0a03", "#4d0a03", "#4d0a03", "#4d0a03", "#4d0a03", "#a95232",],
@@ -577,7 +605,8 @@ elements.mold = {
             var coords = squareCoords[i];
             var x = pixel.x + coords[0];
             var y = pixel.y + coords[1];
-            if (isEmpty(x, y) && Math.random() <= 0.01 && getPixel(pixel.x, pixel.y + 1) && moldable.includes(getPixel(pixel.x, pixel.y + 1).element)) {
+            const belowPixel = getPixel(pixel.x, pixel.y + 1)
+            if (isEmpty(x, y) && Math.random() <= 0.01 && belowPixel && moldable.includes(belowPixel.element)) {
                 createPixel('mold', x, y)
             }
         }
@@ -646,17 +675,29 @@ elements.randomizer = {
     state: "solid"
 }
 
+if (!elements.cloner.ignore) elements.cloner.ignore = []
+if (!elements.ecloner.ignore) elements.ecloner.ignore = []
+if (!elements.slow_cloner.ignore) elements.slow_cloner.ignore = []
+if (!elements.floating_cloner.ignore) elements.floating_cloner.ignore = []
+if (!elements.rocket.ignore) elements.rocket.ignore = []
+
 elements.cloner.ignore.push("randomizer")
 elements.ecloner.ignore.push("randomizer")
 elements.floating_cloner.ignore.push("randomizer")
 elements.slow_cloner.ignore.push("randomizer")
 elements.rocket.ignore.push("randomizer")
 
+/**
+ * 
+ * @param {Pixel} pixel 
+ * @returns 
+ */
 elements.antibomb.tick = function (pixel) {
     doDefaults(pixel)
     if (!tryMove(pixel, pixel.x, pixel.y + 1)) {
         if (!outOfBounds(pixel.x, pixel.y + 1)) {
-            var elem = pixelMap[pixel.x][pixel.y + 1].element;
+            // @ts-ignore
+            var elem = getPixel(pixel.x, pixel.y + 1).element;
             if (elements[elem].isGas) { return }
         }
         else {
@@ -668,10 +709,17 @@ elements.antibomb.tick = function (pixel) {
     }
 }
 
+/**
+ * 
+ * @param {number} x0 
+ * @param {number} y0 
+ * @param {number} radius 
+ * @param {string} element 
+ */
 function drawCircle(x0, y0, radius, element) {
     for (let y = -radius; y <= radius; y++) {
         for (let x = -radius; x <= radius; x++) {
-            if (x * x + y * y <= radius * radius) {
+            if (x ** 2 + y ** 2 <= radius ** 2) {
                 let px = x0 + x;
                 let py = y0 + y;
                 if (isEmpty(px, py)) {
@@ -725,6 +773,24 @@ elements.circle = {
     maxSize: 1,
     excludeRandom: true
 };
+
+renderPostPixel(() => {
+    if (currentElement !== "circle") return;
+    if (!ctx) return
+    for (let y = -globals.circleRad; y <= globals.circleRad; y++) {
+        for (let x = -globals.circleRad; x <= globals.circleRad; x++) {
+            if (x ** 2 + y ** 2 <= globals.circleRad ** 2) {
+                let px = mousePos.x + x;
+                let py = mousePos.y + y;
+                if (isEmpty(px, py)) {
+                    drawSquare(ctx, "green", px, py, undefined, 0.5)
+                } else {
+                    drawSquare(ctx, "red", px, py, undefined, 0.5)
+                }
+            }
+        }
+    }
+})
 
 runAfterReset(function () {
     if (globals.rCircle) {
@@ -806,7 +872,7 @@ runAfterReset(() => {
     }
 })
 
-if (!elements.malware.reactions) { elements.malware.reactions = {} }
+elements.malware.reactions ??= ensureReactions(elements.malware)
 elements.malware.reactions.rgb_led = { elem2: ["led_r", "led_g", "led_b"], chance: 0.01 }
 elements.malware.reactions.led_r = { elem2: ["rgb_led", "led_g", "led_b"], chance: 0.01 }
 elements.malware.reactions.led_g = { elem2: ["rgb_led", "led_r", "led_b"], chance: 0.01 }
@@ -1076,18 +1142,25 @@ elements.uv_light = {
 };
 
 if (!settings.cheerful) {
-    elements.uv_light.reactions.cell = { elem2: "cancer", chance: 0.05 },
-        elements.uv_light.reactions.skin = { elem2: "cancer", chance: 0.005 }
+    ensureReactions(elements.uv_light).cell = { elem2: "cancer", chance: 0.05 };
+    ensureReactions(elements.uv_light).skin = { elem2: "cancer", chance: 0.005 }
 }
 else {
-    if (elements.uv_light.reactions.cell) {
+    if (elements?.uv_light?.reactions?.cell) {
         delete elements.uv_light.reactions.cell
     }
-    if (elements.uv_light.reactions.skin) {
+    if (elements?.uv_light?.reactions?.skin) {
         delete elements.uv_light.reactions.skin
     }
 }
 
+/**
+ * 
+ * @param {string} base 
+ * @param {string} glow 
+ * @param {*} ratio 
+ * @returns 
+ */
 function fadeColor(base, glow, ratio) {
     // ratio 1 = full glow, 0 = base color
     let r1 = parseInt(glow.substr(1, 2), 16);
@@ -1169,44 +1242,18 @@ let neonTubeChoice = "#00ff00"; // default color
 
 elements.neon_tube = {
     color: "#d1d1b5",
-    renderer: renderPresets.BORDER,
-    alpha: 0.25,
     conduct: 1,
     behavior: behaviors.WALL,
     breakInto: ["neon", "glass_shard"],
     grain: 0,
     category: "machines",
     state: "solid",
-    tick: (pixel) => {
-        pixel.def_color ??= pixel.color;
-        pixel.glow_color ??= neonTubeChoice;
-
-        if (pixel.charge) {
-            pixel.alpha = 1;
-            pixel.color = pixel.glow_color;
-        } else {
-            pixel.alpha = 0.25;
-            pixel.color = pixel.def_color;
-        }
-
-        if (enabledMods.includes("mods/glow.js")) {
-            if (pixel.charge) {
-                pixel.emit = true;
-                pixel.emitColor = pixel.glow_color;
-            } else {
-                delete pixel.emit;
-                delete pixel.emitColor;
-            }
-        }
-    },
-    // Broken since yellow stacks above color
-    // only green is good
-    /*
     onSelect() {
         promptChoose(
             "Pick a color for your neon tube:",
             ["Red", "Green", "Blue", "Pink"],
-            function(choice) {
+            function (choice) {
+                /**@type {Record<string, string>} */
                 let colors = {
                     "Red": "#ff0000",
                     "Green": "#00ff00",
@@ -1218,8 +1265,39 @@ elements.neon_tube = {
             },
             "Neon Tube Setup"
         );
+    },
+    renderer(pixel, ctx) {
+        pixel.def_color ??= pixel.color;
+        pixel.glow_color ??= neonTubeChoice;
+        if (!viewInfo[view].colorEffects) { drawDefault(ctx, pixel); return }
+        let alpha = (pixel.alpha ?? 1);
+        if (!pixel.charge && !pixel.chargeCD) {
+            alpha -= 0.75;
+            alpha = Math.max(0, alpha);
+            pixel.color = pixel.def_color
+            if (pixel.emit) pixel.emit = false;
+            if (alpha === 0) return;
+        }
+        else {
+            alpha = 1;
+            pixel.color = pixel.glow_color;
+            if (!pixel.emit) pixel.emit = true;
+        }
+        drawSquare(ctx, pixel.color, pixel.x, pixel.y, undefined, alpha);
+        if (pixel.alpha === 0) return;
+        let edge = false;
+        for (var i = 0; i < adjacentCoords.length; i++) {
+            let coords = adjacentCoords[i];
+            let x = pixel.x + coords[0];
+            let y = pixel.y + coords[1];
+            // @ts-ignore
+            if (isEmpty(x, y) || (!outOfBounds(x, y) && elements[pixelMap[x][y].element].movable !== elements[pixel.element].movable)) {
+                edge = true;
+                break;
+            }
+        }
+        if (edge) { drawSquare(ctx, "rgb(255,255,255)", pixel.x, pixel.y, undefined, (alpha || 1) / 4) }
     }
-    */
 };
 
 elements.realistic_ball = {
@@ -1522,6 +1600,12 @@ window.addEventListener('keyup', (e) => {
 });
 
 // Helper function for movement
+/**
+ * 
+ * @param {Pixel} headPixel 
+ * @param {number} direction 
+ * @returns 
+ */
 function tryMoveRobot(headPixel, direction) {
     const newX = headPixel.x + direction;
     const body = getPixel(headPixel.x, headPixel.y + 1);
@@ -1536,11 +1620,17 @@ function tryMoveRobot(headPixel, direction) {
     return false;
 }
 
+/**
+ * 
+ * @param {Pixel} headPixel 
+ * @returns 
+ */
 function tryJump(headPixel) {
     const body = getPixel(headPixel.x, headPixel.y + 1);
     if (!body || body.element !== "robot_body") return false;
 
     // Check if grounded (on solid surface or bottom of screen)
+    // @ts-ignore
     const underBody = getPixel(body.x, body.y + 1);
     const isGrounded = (!isEmpty(body.x, body.y + 1) || outOfBounds(body.x, body.y + 1));
 
@@ -1664,17 +1754,21 @@ elements.robot = {
         if (isEmpty(pixel.x, pixel.y - 1)) {
             createPixel("robot_head", pixel.x, pixel.y - 1);
             const head = getPixel(pixel.x, pixel.y - 1);
-            head.mode = globals.mode;
-            changePixel(pixel, "robot_body");
-            pixel.mode = globals.mode;
+            if (head) {
+                head.mode = globals.mode;
+                changePixel(pixel, "robot_body");
+                pixel.mode = globals.mode;
+            }
         }
         // Try to create body below if above is blocked
         else if (isEmpty(pixel.x, pixel.y + 1)) {
             createPixel("robot_body", pixel.x, pixel.y + 1);
             const body = getPixel(pixel.x, pixel.y + 1);
-            body.mode = globals.mode;
-            changePixel(pixel, "robot_head");
-            pixel.mode = globals.mode;
+            if (body) {
+                body.mode = globals.mode;
+                changePixel(pixel, "robot_head");
+                pixel.mode = globals.mode;
+            }
         }
         // Delete if no space
         else {
@@ -1947,6 +2041,7 @@ elements.indestructable_filter = {
     movable: false,
     tick(pixel) {
         let upPixel = getPixel(pixel.x, pixel.y - 1)
+        // @ts-ignore
         let belowPixel = getPixel(pixel.x, pixel.y + 1)
 
         if (upPixel && elements[upPixel.element].state == "liquid" && !pixel.con) {
@@ -2117,6 +2212,7 @@ elements.white_hole = {
             var coords = adjacentCoords[i];
             var x = pixel.x + coords[0];
             var y = pixel.y + coords[1];
+            // @ts-ignore
             if (isEmpty(x, y) || (!outOfBounds(x, y) && elements[pixelMap[x][y].element].movable !== elements[pixel.element].movable)) {
                 edge = true;
                 break;
@@ -2227,9 +2323,9 @@ elements.dried_cacao_bean = {
     density: 1000
 }
 
-elements.coffee_bean.reactions.sugar_water = { elem2: "coffee", tempMin: 80 }
-elements.coffee.reactions.sugar_water = { elem2: "coffee", tempMin: 70, chance: 0.2 }
-elements.coffee_ground.reactions.sugar_water = elements.coffee_ground.reactions.water
+ensureReactions(elements.coffee_bean).sugar_water = { elem2: "coffee", tempMin: 80 }
+ensureReactions(elements.coffee).sugar_water = { elem2: "coffee", tempMin: 70, chance: 0.2 }
+ensureReactions(elements.coffee_ground).sugar_water = { elem1: "coffee", elem2: "coffee", tempMin: 70 }
 elements._ = {
     category: "extras",
     onSelect() {
@@ -2333,7 +2429,7 @@ elements.cacao_stem = {
             }
         }
         if (pixel.fruitCoordsx && pixel.fruitCoordsy) {
-            if (getPixel(pixel.fruitCoordsx, pixel.fruitCoordsy) && getPixel(pixel.fruitCoordsx, pixel.fruitCoordsy).element === "cacao_fruit") return;
+            if (getPixel(pixel.fruitCoordsx, pixel.fruitCoordsy) && getPixel(pixel.fruitCoordsx, pixel.fruitCoordsy)?.element === "cacao_fruit") return;
             pixel.fruitMade = false
             delete pixel.fruitCoordsx
             delete pixel.fruitCoordsy
@@ -2346,6 +2442,14 @@ elements.cacao_stem = {
 // @ts-ignore
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
+/**
+ * 
+ * @param {number} frequency 
+ * @param {number} duration 
+ * @param {OscillatorType} type 
+ * @param {number} volume 
+ * @returns 
+ */
 function playNote(frequency, duration = 1, type = "sine", volume = 0.1) {
     if (!Number.isFinite(frequency)) {
         console.error("Invalid frequency:", frequency);
@@ -2368,7 +2472,7 @@ function playNote(frequency, duration = 1, type = "sine", volume = 0.1) {
     osc.stop(audioCtx.currentTime + duration);
 }
 
-
+/**@type {Record<string, number>} */
 const pianoFrequencies = {
     "A0": 27.500, "A#0": 29.135, "BB0": 29.135, "B0": 30.868,
     "C1": 32.703, "C#1": 34.648, "DB1": 34.648, "D1": 36.708,
@@ -2414,6 +2518,98 @@ const pianoFrequencies = {
     "B7": 3951.066,
 
     "C8": 4186.009
+};
+
+/** @type {Record<number, string[]>} */
+const reversedPianoFrequencies = {
+    27.5: ["A0"],
+    29.135: ["A#0", "BB0"],
+    30.868: ["B0"],
+    32.703: ["C1"],
+    34.648: ["C#1", "DB1"],
+    36.708: ["D1"],
+    38.891: ["D#1", "EB1"],
+    41.203: ["E1"],
+    43.654: ["F1"],
+    46.249: ["F#1", "GB1"],
+    48.999: ["G1"],
+    51.913: ["G#1", "AB1"],
+    55: ["A1"],
+    58.27: ["A#1", "BB1"],
+    61.735: ["B1"],
+    65.406: ["C2"],
+    69.296: ["C#2", "DB2"],
+    73.416: ["D2"],
+    77.782: ["D#2", "EB2"],
+    82.407: ["E2"],
+    87.307: ["F2"],
+    92.499: ["F#2", "GB2"],
+    97.999: ["G2"],
+    103.826: ["G#2", "AB2"],
+    110: ["A2"],
+    116.541: ["A#2", "BB2"],
+    123.471: ["B2"],
+    130.813: ["C3"],
+    138.591: ["C#3", "DB3"],
+    146.832: ["D3"],
+    155.563: ["D#3", "EB3"],
+    164.814: ["E3"],
+    174.614: ["F3"],
+    184.997: ["F#3", "GB3"],
+    195.998: ["G3"],
+    207.652: ["G#3", "AB3"],
+    220: ["A3"],
+    233.082: ["A#3", "BB3"],
+    246.942: ["B3"],
+    261.626: ["C4"],
+    277.183: ["C#4", "DB4"],
+    293.665: ["D4"],
+    311.127: ["D#4", "EB4"],
+    329.628: ["E4"],
+    349.228: ["F4"],
+    369.994: ["F#4", "GB4"],
+    391.995: ["G4"],
+    415.305: ["G#4", "AB4"],
+    440: ["A4"],
+    466.164: ["A#4", "BB4"],
+    493.883: ["B4"],
+    523.251: ["C5"],
+    554.365: ["C#5", "DB5"],
+    587.33: ["D5"],
+    622.254: ["D#5", "EB5"],
+    659.255: ["E5"],
+    698.456: ["F5"],
+    739.989: ["F#5", "GB5"],
+    783.991: ["G5"],
+    830.609: ["G#5", "AB5"],
+    880: ["A5"],
+    932.328: ["A#5", "BB5"],
+    987.767: ["B5"],
+    1046.502: ["C6"],
+    1108.731: ["C#6", "DB6"],
+    1174.659: ["D6"],
+    1244.508: ["D#6", "EB6"],
+    1318.51: ["E6"],
+    1396.913: ["F6"],
+    1479.978: ["F#6", "GB6"],
+    1567.982: ["G6"],
+    1661.219: ["G#6", "AB6"],
+    1760: ["A6"],
+    1864.655: ["A#6", "BB6"],
+    1975.533: ["B6"],
+    2093.005: ["C7"],
+    2217.461: ["C#7", "DB7"],
+    2349.318: ["D7"],
+    2489.016: ["D#7", "EB7"],
+    2637.02: ["E7"],
+    2793.826: ["F7"],
+    2959.955: ["F#7", "GB7"],
+    3135.963: ["G7"],
+    3322.438: ["G#7", "AB7"],
+    3520: ["A7"],
+    3729.31: ["A#7", "BB7"],
+    3951.066: ["B7"],
+    4186.009: ["C8"]
 };
 
 
@@ -2462,6 +2658,9 @@ elements.note_block = {
         if (pixel.charge) {
             globals.notesToPlay.push(Number(pixel.note));
         }
+    },
+    hoverStat(pixel) {
+        return JSON.stringify(reversedPianoFrequencies[pixel.note])
     },
     conduct: 1,
     category: "machines"
@@ -2606,7 +2805,7 @@ async function filterWordList() {
     const chunkSize = 1000;
     for (let i = 0; i < globals.cachedWords.length; i += chunkSize) {
         const chunk = globals.cachedWords.slice(i, i + chunkSize);
-        globals.filteredCachedWords.push(...chunk.filter(word => cleanSet.has(word)));
+        globals.filteredCachedWords.push(...chunk.filter((/** @type {any} */ word) => cleanSet.has(word)));
         await new Promise(requestAnimationFrame);
     }
     console.log("Finished filtering")
@@ -2716,8 +2915,11 @@ dependOn("betterSettings.js", () => {
     var resetRGBLed = new Setting("Reset RGB Led value on reset", "Reset RGB Led", settingType.BOOLEAN, false, defaultValue = false);
     // @ts-ignore
     var resetCustomBomb = new Setting("Reset Custom Bomb value on reset", "Reset Custom Bomb", settingType.BOOLEAN, false, defaultValue = false);
+    // @ts-ignore
     Reset.registerSettings("Reset", resetRGBLed)
+    // @ts-ignore
     Reset.registerSettings("Reset", resetCircle)
+    // @ts-ignore
     Reset.registerSettings("Reset", resetCustomBomb)
     // @ts-ignore
     settingsManager.registerTab(Reset);
@@ -2808,7 +3010,7 @@ elements.carrot = {
     },
     tick(pixel) {
         let belowPixel = getPixel(pixel.x, pixel.y + 1)
-        if (getPixel(pixel.x, pixel.y - 1) && getPixel(pixel.x, pixel.y - 1).element != "carrot" && getPixel(pixel.x, pixel.y - 1).element != "plant") {
+        if (getPixel(pixel.x, pixel.y - 1) && getPixel(pixel.x, pixel.y - 1)?.element != "carrot" && getPixel(pixel.x, pixel.y - 1)?.element != "plant") {
             pixel.connected = false;
         }
         if (!getPixel(pixel.x, pixel.y - 1)) {
@@ -2829,6 +3031,11 @@ elements.carrot = {
     }
 }
 
+/**
+ * 
+ * @param {number} n 
+ * @returns 
+ */
 function factorial(n) {
     if (n < 0) throw new Error("Factorial not defined for negative numbers");
     let result = 1;
@@ -2838,6 +3045,11 @@ function factorial(n) {
     return result;
 }
 
+/**
+ * 
+ * @param {string} eq 
+ * @returns 
+ */
 function parseEquation(eq) {
     eq = eq.replace(/\s+/g, "");
 
@@ -2907,9 +3119,19 @@ function parseEquation(eq) {
     return fixed;
 }
 
-
+/**
+ * 
+ * @param {(string | number)[]} tokens 
+ * @returns 
+ */
 function evaluate(tokens) {
+    /**
+     * 
+     * @param {number} start 
+     * @returns {[string | number, number]}
+     */
     function helper(start = 0) {
+        /**@type {(string | number)[]}*/
         let stack = [];
         let i = start;
 
@@ -2921,16 +3143,19 @@ function evaluate(tokens) {
 
                 // Check for factorial
                 if (tokens[i + 1] === "!") {
+                    // @ts-ignore
                     stack[stack.length - 1] = factorial(stack[stack.length - 1]);
                     i++; // skip the '!' token
                 }
             }
             else if (token === "sqrt") {
                 let [val, nextIndex] = helper(i + 1);
+                // @ts-ignore
                 stack.push(Math.sqrt(val));
 
                 // Check for factorial after function
                 if (tokens[nextIndex + 1] === "!") {
+                    // @ts-ignore
                     stack[stack.length - 1] = factorial(stack[stack.length - 1]);
                     nextIndex++;
                 }
@@ -2943,6 +3168,7 @@ function evaluate(tokens) {
 
                 // Factorial for parentheses
                 if (tokens[nextIndex + 1] === "!") {
+                    // @ts-ignore
                     stack[stack.length - 1] = factorial(stack[stack.length - 1]);
                     nextIndex++;
                 }
@@ -2965,6 +3191,7 @@ function evaluate(tokens) {
             if (stack[j] === "*" || stack[j] === "/") {
                 let left = stack[j - 1];
                 let right = stack[j + 1];
+                // @ts-ignore
                 let result = stack[j] === "*" ? left * right : left / right;
                 stack.splice(j - 1, 3, result);
                 j--;
@@ -2976,6 +3203,7 @@ function evaluate(tokens) {
             if (stack[j] === "+" || stack[j] === "-") {
                 let left = stack[j - 1];
                 let right = stack[j + 1];
+                // @ts-ignore
                 let result = stack[j] === "+" ? left + right : left - right;
                 stack.splice(j - 1, 3, result);
                 j--;
@@ -2987,7 +3215,11 @@ function evaluate(tokens) {
 
     return helper(0)[0];
 }
-
+/**
+ * 
+ * @param {string} expr 
+ * @returns 
+ */
 function calculate(expr) {
     let tokens = parseEquation(expr);
     return evaluate(tokens);
@@ -3003,10 +3235,12 @@ elements.calculator = {
                     logMessage("Division by 0 error")
                     return;
                 }
+                // @ts-ignore
                 if (isNaN(ans)) {
                     logMessage("Error")
                     return;
                 }
+                // @ts-ignore
                 logMessage(ans.toFixed(10))
             }
             catch (e) {
@@ -3253,8 +3487,9 @@ elements.replace_all_of_element = {
 
 /**
  * 
- * @param {(pixel: Pixel | undefined) => void} callback 
+ * @param {(pixel: Pixel | null) => void} callback 
  */
+// @ts-ignore
 function forEachPixel(callback) {
     for (let x = 0; x <= width; x++) {
         for (let y = 0; y <= height; y++) {
@@ -3297,5 +3532,236 @@ elements["🐔poolnoodle"] = {
         if (Math.random() <= 0.7) {
             Math.random() <= 0.5 ? tryMove(pixel, pixel.x + 1, pixel.y) : tryMove(pixel, pixel.x - 1, pixel.y)
         }
+    }
+}
+
+/**
+ * 
+ * @param {{r: number, g: number, b: number}} c1 
+ * @param {{r: number, g: number, b: number}} c2 
+ * @returns 
+ */
+function colorDistance(c1, c2) {
+    return Math.sqrt(
+        (c1.r - c2.r) ** 2 +
+        (c1.g - c2.g) ** 2 +
+        (c1.b - c2.b) ** 2
+    );
+}
+
+/**
+ * @param {string | string[]} hex1
+ * @param {string} hex2
+ * @param {number} tolerance
+ * @returns {boolean}
+ */
+function isRoughlySameColor(hex1, hex2, tolerance = 50) {
+    const c2 = hexToRGB(hex2);
+    if (!c2) {
+        console.error("invalid hex2 color");
+        return false;
+    }
+
+    const list1 = Array.isArray(hex1) ? hex1 : [hex1];
+
+    for (const h of list1) {
+        const c1 = hexToRGB(h);
+        if (!c1) continue;
+
+        if (colorDistance(c1, c2) <= tolerance) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * 
+ * @param {number} n 
+ * @param {number} m 
+ * @returns 
+ */
+function mod(n, m) {
+    return ((n % m) + m) % m;
+}
+
+// Unfinished
+if (false) {
+    elements.prism = {
+        color: ["#5e807d", "#5e807d", "#679e99", "#5e807d", "#5e807d"],
+        colorPattern: textures.GLASS,
+        colorKey: {
+            "g": "#5e807d",
+            "s": "#638f8b",
+            "S": "#679e99"
+        },
+        renderer: renderPresets.BORDER,
+        behavior: behaviors.WALL,
+        reactions: {
+            "radiation": { elem1: "rad_glass", chance: 0.33 },
+            "rad_steam": { elem1: "rad_glass", elem2: null, chance: 0.33 },
+            "fallout": { elem1: "rad_glass", elem2: "radiation", chance: 0.1 },
+            "uranium": { elem1: "rad_glass", chance: 0.01 },
+        },
+        onPlace(pixel) {
+            /**
+             * @param {Pixel} other 
+             * @param {string | null | undefined} color
+             */
+            pixel.acceptLight = (other, color = null) => {
+                if (
+                    other.con &&
+                    "bx" in other.con &&
+                    "by" in other.con &&
+                    other.element === "prism"
+                ) {
+                    pixel.con = other.con
+                    other.con = undefined
+                    pixel.con.x = pixel.x
+                    pixel.con.y = pixel.y
+                    pixel.skipUpdate = true
+                    if (color) pixel.color = color
+                    pixel.con.passed++
+                }
+            }
+
+            pixel.squareCoords = [
+                [0, 1],
+                [-1, 1],
+                [-1, 0],
+                [-1, -1],
+                [0, -1],
+                [1, -1],
+                [1, 0],
+                [1, 1]
+            ];
+
+            pixel.squareCoordsToIndex = {
+                '0,1': 0,
+                '-1,1': 1,
+                '-1,0': 2,
+                '-1,-1': 3,
+                '0,-1': 4,
+                '1,-1': 5,
+                '1,0': 6,
+                '1,1': 7
+            }
+
+            pixel.spreadLight = () => {
+                if (
+                    pixel.con &&
+                    "bx" in pixel.con &&
+                    "by" in pixel.con
+                ) {
+                    if (isRoughlySameColor(elements[pixel.element].color || "#fffdcf", pixel.color)) {
+                        const other = getPixel(pixel.x + pixel.con.bx, pixel.y + pixel.con.by)
+                        if (other) {
+                            other.con = structuredClone(pixel.con)
+                            other.con.x = other.x
+                            other.con.y = other.y
+                            other.con.color = pixelColorPick(other, "#00ff00")
+                        }
+                        const leftCoords = pixel.squareCoords[(pixel.squareCoordsToIndex[`${pixel.con.bx},${pixel.con.by}`] + 1) % 8]
+                        const leftPixel = getPixel(pixel.x + leftCoords[0], pixel.y + leftCoords[1])
+                        if (leftPixel) {
+                            leftPixel.con = structuredClone(pixel.con)
+                            leftPixel.con.x = leftPixel.x
+                            leftPixel.con.y = leftPixel.y
+                            leftPixel.con.color = pixelColorPick(leftPixel, "#ff0000")
+                        }
+                        const rightCoords = pixel.squareCoords[
+                            mod(pixel.squareCoordsToIndex[`${pixel.con.bx},${pixel.con.by}`] - 1, 8)
+                        ]
+                        const rightPixel = getPixel(pixel.x + rightCoords[0], pixel.y + rightCoords[1])
+                        if (rightPixel) {
+                            rightPixel.con = structuredClone(pixel.con)
+                            rightPixel.con.x = rightPixel.x
+                            rightPixel.con.y = rightPixel.y
+                            rightPixel.con.color = pixelColorPick(rightPixel, "#0000ff")
+                        }
+                    }
+                }
+            }
+        },
+        tick(pixel) {
+            shuffleArray(squareCoordsShuffle)
+            for (let i = 0; i < squareCoordsShuffle.length; i++) {
+                let coord = squareCoordsShuffle[i];
+                let x = pixel.x + coord[0];
+                let y = pixel.y + coord[1];
+                const other = getPixel(x, y)
+                if (
+                    other &&
+                    "bx" in other &&
+                    "by" in other &&
+                    other.x + other.bx === pixel.x &&
+                    other.y + other.by === pixel.y
+                ) {
+                    if (!pixel.con) {
+                        pixel.con = structuredClone(other)
+                        pixel.con.x = pixel.x
+                        pixel.con.y = pixel.y
+                        pixel.con.passed = 1
+                        deletePixel(other.x, other.y)
+                        return;
+                    }
+                }
+            }
+            if (pixel.skipUpdate) { // slows light a bit on average
+                pixel.skipUpdate = false
+                return;
+            }
+            if (
+                pixel.con &&
+                "bx" in pixel.con &&
+                "by" in pixel.con
+            ) {
+                const other = getPixel(pixel.x + pixel.con.bx, pixel.y + pixel.con.by)
+                if (other?.element === "prism") {
+                    if (
+                        pixel.con.passed % 2 === 0 &&
+                        pixel.con.element === "light"
+                    ) { pixel.spreadLight() }
+                    else {
+                        other.acceptLight(pixel)
+                    }
+                } else if (other) {
+                    if (getPixel(pixel.x + pixel.con.bx, pixel.y)?.element !== "prism") {
+                        pixel.bx *= -1
+                    }
+                    if (getPixel(pixel.x, pixel.y + pixel.con.by)?.element !== "prism") {
+                        pixel.by *= -1
+                    }
+                    const newOther = getPixel(pixel.x + pixel.con.bx, pixel.y + pixel.con.by)
+                    if (newOther?.element === "prism") {
+                        if (
+                            pixel.con.passed % 2 === 0 &&
+                            pixel.con.element === "light"
+                        ) { pixel.spreadLight() }
+                        else {
+                            other.acceptLight(pixel)
+                        }
+                    }
+                } else {
+                    createPixel(pixel.con.element, pixel.x + pixel.con.bx, pixel.y + pixel.con.by)
+                    const newOther = getPixel(pixel.x + pixel.con.bx, pixel.y + pixel.con.by)
+                    if (newOther) {
+                        newOther.bx = pixel.con.bx
+                        newOther.by = pixel.con.by
+                        newOther.color = pixel.con.color
+                    }
+                    pixel.con = undefined
+                }
+            }
+        },
+        tempHigh: 1500,
+        category: "solids",
+        state: "solid",
+        density: 2500,
+        breakInto: "glass_shard",
+        noMix: true,
+        grain: 0,
+        canContain: true,
     }
 }
