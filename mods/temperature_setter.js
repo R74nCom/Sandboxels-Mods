@@ -1,30 +1,36 @@
-// Sandboxels Mod: Temperature Controller
-let customSetTemperature = 20; // Standardwert in Celsius
+// Sandboxels Mod: Temperature Controller Machine
 
 elements.temperature_controller = {
     color: "#ff4500",
-    tool: function(pixel) {
-        // Umrechnung von Celsius in die interne Sandboxels-Temperatur (Kelvin-basiert)
-        pixel.temp = customSetTemperature;
-    },
-    category: "tools",
-    desc: "Klicke auf Pixel, um ihre Temperatur exakt einzustellen.",
-    
-    // Wird aufgerufen, sobald das Tool im Menü ausgewählt wird
-    onSelected: function() {
-        let input = prompt("what is the set temperature you want? (Celcius)", customSetTemperature);
-        
-        if (input !== null) {
-            let parsedTemp = parseFloat(input.replace(',', '.'));
-            
-            // Validierung: Zwischen dem absoluten Nullpunkt (-273.15) und unendlich
-            if (!isNaN(parsedTemp) && parsedTemp >= -273.15) {
-                customSetTemperature = parsedTemp;
-                // Feedback in der Beschreibung anzeigen
-                elements.temperature_controller.desc = `Setzt die Temperatur auf ${customSetTemperature}°C.`;
-            } else {
-                alert("Bitte gib eine gültige Zahl ab -273,15 ein!");
+    behavior: behaviors.WALL, // Bleibt fest an Ort und Stelle wie eine Maschine
+    category: "machines",
+    density: 1000,
+    desc: "Ein Steuergerät, das seine eigene Temperatur hält. Klicke es an oder platziere es, um die Temperatur einzustellen.",
+
+    // Wird aufgerufen, wenn das Element in der Welt platziert wird
+    onPlace: function(pixel) {
+        // Nutzt das native Sandboxels-Popup-System aus deinem Screenshot
+        promptUser("TEMPERATURE", "what is the set temperature you want? (Celcius)", function(input) {
+            if (input !== null && input !== "") {
+                let parsedTemp = parseFloat(input.replace(',', '.'));
+                
+                // Validierung: Ab dem absoluten Nullpunkt (-273.15)
+                if (!isNaN(parsedTemp) && parsedTemp >= -273.15) {
+                    pixel.temp = parsedTemp;
+                    // Wir speichern die Zieltemperatur im Pixel, damit er sie halten kann
+                    pixel.targetTemp = parsedTemp; 
+                } else {
+                    alert("Bitte gib eine gültige Zahl ab -273,15 ein!");
+                }
             }
+        });
+    },
+
+    // Das Verhalten in jedem Frame (Tick)
+    tick: function(pixel) {
+        // Wenn eine Zieltemperatur gesetzt wurde, zwinge das Pixel auf diesen Wert
+        if (pixel.targetTemp !== undefined) {
+            pixel.temp = pixel.targetTemp;
         }
     }
 };
