@@ -35,6 +35,58 @@ elements.iron_ore = {
     state: "solid",
 };
 
+// --- НОВЫЙ ЭЛЕМЕНТ: ЭЛЕКТРОМОТОР ДЛЯ СДВИГА ГРУПП ---
+
+elements.electric_motor = {
+    color: "#3a6073", // Сине-стальной цвет мотора
+    behavior: behaviors.WALL, // Сам мотор прочно закреплен на холсте
+    category: "engineering",
+    desc: "Электромотор. Подайте электричество, чтобы он толкал группу пикселей (созданную инструментом 'group') перед собой.",
+    state: "solid",
+    conduct: 1.0, // Проводит ток для активации
+    hardToBreak: true,
+};
+
+elements.electric_motor.tick = function(pixel) {
+    // 1. Проверяем наличие заряда
+    if (pixel.charge && pixel.charge > 0) {
+        let x = pixel.x;
+        let y = pixel.y;
+        
+        // Цель — пиксель справа
+        let targetX = x + 1;
+        let targetY = y;
+        
+        // 2. Проверяем, есть ли там что-то
+        if (!isEmpty(targetX, targetY)) {
+            let targetPixel = pixelMap[targetX][targetY];
+            
+            // 3. Проверяем наличие группы
+            if (targetPixel && targetPixel.group) {
+                let myGroup = targetPixel.group;
+                
+                // ВАЖНО: Размораживаем, чтобы сдвинуть
+                myGroup.frozen = false;
+                
+                // Пытаемся сдвинуть
+                let moved = moveGroup(myGroup, 1, 0);
+                
+                // 4. Дополнительно обновляем состояние группы, чтобы игра "увидела" изменения
+                if (moved) {
+                    // Принудительно передаем заряд всей группе
+                    for (let p of myGroup.pixels) {
+                        p.charge = pixel.charge;
+                    }
+                    // Повторно замораживаем, если нужно сохранить целостность конструкции
+                    myGroup.frozen = true;
+                }
+            }
+        }
+    }
+};
+
+
+
 
 
 // Нефтяная скважина / Бур (Генерирует нефть от тока)
@@ -390,17 +442,19 @@ runAfterLoad(function() {
     }
 
 
-        // 4. Металлургические реакции (ИСПРАВЛЕНО: ID угля изменен на charcoal)
-        if (elements.charcoal) {
-            // Коксование: если оригинальный уголь из игры (charcoal) сильно нагреть выше 300°C без открытого пламени, он очищается до кокса
-            elements.charcoal.tick = function(pixel) {
-                if (pixel.temp >= 300 && !pixel.burning) {
-                    if (Math.random() < 0.05) { 
-                        changePixel(pixel, "coke_fuel"); 
-                    }
-                }
-            };
+        // Правильный способ добавления логики без удаления старой
+const originalCharcoalTick = elements.charcoal.tick;
+elements.charcoal.tick = function(pixel) {
+    // Сначала выполняем старую логику
+    originalCharcoalTick(pixel); 
+    
+    // Затем добавляем вашу логику коксования
+    if (pixel.temp >= 300 && !pixel.burning) {
+        if (Math.random() < 0.005) { // Снизил шанс, чтобы не превращалось всё мгновенно
+            changePixel(pixel, "coke_fuel");
         }
+    }
+};
     
         // Дополнительный крафт: древесину или мертвые растения тоже можно запечь в кокс при высокой температуре
         if (elements.plant) {
