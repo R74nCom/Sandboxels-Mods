@@ -104,7 +104,7 @@ type element = {
     id?: number,
     name?: string,
     alias?: string|string[],
-    category: category,
+    category?: category,
     desc?: string,
     extraInfo?: string,
     related?: elementNameString|elementNameString[],
@@ -165,7 +165,7 @@ type element = {
      * Defines other temperatures above `tempHigh` at which element turns into other elements
      */
     extraTempHigh?: extraTemperature,
-    state: state,
+    state?: state,
     density?: number,
     insulate?: boolean,
     viscosity?: number,
@@ -281,7 +281,7 @@ type element = {
 type propertyName = string;
 type defaultValue = any;
 type elementNameString = keyof typeof elements;
-type state = 'solid'|'liquid'|'gas';
+type state = 'solid'|'liquid'|'gas'|(string&{});
 type category = (typeof categoryList)[number]|(string&{});
 type Reactions = Record<elementNameString,{
     elem1: elementNameString|null,
@@ -409,3 +409,8 @@ declare function tryMove(pixel:Pixel,targetX:number,targetY:number):boolean;
  * Tests that the pixel can be moved to x y. But doesn't moves that.
  */
 declare function canMove(pixel:Pixel,targetX:number,targetY:number):boolean;
+declare function explode(x:number,y:number,radius:number):void;
+declare function flash(x:number,y:number,duration:number):void;
+declare function hexToRgb(hex:colorString):colorObject;
+declare function rgbToHex(r:number,g:number,b:number):colorString;
+declare function pixelColorPick(pixel:Pixel,color?:colorString):colorString;
