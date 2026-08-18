@@ -166,7 +166,7 @@ type element = {
      */
     extraTempHigh?: extraTemperature,
     state: state,
-    density: number,
+    density?: number,
     insulate?: boolean,
     viscosity?: number,
     conduct?: zeroToOne,
