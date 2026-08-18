@@ -392,3 +392,4 @@ type behaviorPattern = [string, string, string];
 type extraTemperature = Record<temperatureString,element>;
 type numberFromMinus1To1 = number;
 type setting = string;
+declare var pixelMap: (Pixel|null)[][];
