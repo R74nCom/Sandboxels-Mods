@@ -401,3 +401,11 @@ declare var pixelTicks: number;
 declare function isEmpty(x:number,y:number,ignoreAir?:boolean):boolean;
 declare function outOfBounds(x:number,y:number): void;
 declare function changePixel(pixel:Pixel,newElem:elementNameString):void;
+/**
+ * Tries to move the pixel to x and y. If it's possible, moves the pixel
+ */
+declare function tryMove(pixel:Pixel,targetX:number,targetY:number):boolean;
+/**
+ * Tests that the pixel can be moved to x y. But doesn't moves that.
+ */
+declare function canMove(pixel:Pixel,targetX:number,targetY:number):boolean;
