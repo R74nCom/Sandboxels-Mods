@@ -142,7 +142,7 @@ type element = {
     perTick?: ()=>void,
     hoverStat?: (pixel:Pixel)=>void,
     renderer?: (pixel:Pixel,ctx:CanvasRenderingContext2D)=>void,
-    reactions: Reactions,
+    reactions?: Reactions,
     /**
      * The default temperature of pixels of the element
      */
