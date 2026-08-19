@@ -1,9 +1,20 @@
-How to turn on the sandboxel intellisense? Write this string in the start of the .js file of mod to use that:
-```js
+# Sandboxels VS Code Auto-Complete & IntelliSense
+
+A comprehensive TypeScript declaration file (`.d.ts`) that brings smart code completion, type checking, and documentation for **550+ sandbox elements** and game APIs directly into VS Code.
+
+## 🚀 How to Enable Auto-Complete
+
+To activate IntelliSense in your mod, simply add this triple-slash reference to the **very first line** of your mod's `.js` file:
+
+```javascript
 /// <reference path="./sandboxel.d.ts" />
 ```
-**Warning:** This can only work if both files (your `mod.js` and `sandboxel.d.ts`) in the same folder and on same file level.  
-**Solution:** You can enter this at the first line:
-```js
-/// <reference path="path to sandboxel.d.ts" />
+
+> ⚠️ **Important Requirement:** This works only if both your mod file (e.g., `mod.js`) and `sandboxel.d.ts` are located in the **same folder** (on the same directory level).
+
+### 💡 Solution for Different Folders
+If you want to keep `sandboxel.d.ts` in a separate folder, specify the relative path to it in the reference link. For example:
+
+```javascript
+/// <reference path="../types/sandboxel.d.ts" />
 ```
