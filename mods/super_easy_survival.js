@@ -267,7 +267,7 @@ survivalShop = {
     "human*2": 10000,
     "sun*1": 100000,
     "stone*10": 50,
-    "charcoal*5" 25,
+    "charcoal*5": 25,
     "cement*5": 50,
     "grass*100": 100,
     "uranium*25": 2500,
@@ -288,7 +288,7 @@ function survivalBuy(element) {
     var price = survivalShop[element];
     if (!price) { alert("The shop isn't selling "+element+"!"); return }
     if (!settings.survival.gold_coin || settings.survival.gold_coin < price) { alert("You can't afford that!"); return }
-    survivalRemove("gold_coin",price);
+s    survivalRemove("gold_coin",price);
     var amount = 1;
     if (element.indexOf("*") !== -1) { amount = parseInt(element.split("*")[1]); element = element.split("*")[0]; }
     survivalAdd(element,amount);
@@ -306,7 +306,7 @@ window.addEventListener("load",function(){
     // move to start of tools
     var erase = document.getElementById("elementButton-erase");
     var sell = document.getElementById("elementButton-sell");
-    var parent = erase.parentElement;
+s    var parent = erase.parentElement;
     parent.removeChild(sell);
     parent.insertBefore(sell,parent.firstChild);
     parent.removeChild(erase);
@@ -315,10 +315,11 @@ window.addEventListener("load",function(){
     document.getElementById("savesButton").remove();
     // document.getElementById("elemSelectButton").remove();
     doRandomEvents = function() {}
-    worldGen = function() {}
+
+    pworldGen = function() {}
     worldgentypes = {}
     loadSave = function() {}
-    showSaves = function() {}
+   showSaves = function() {}
     placeImage = function() {}
     chooseElementPrompt = function() {}
     document.getElementById("toolControls").insertAdjacentHTML("beforeend",`<button class="controlButton" title="Erases all survival.js data" onclick="if (confirm('THIS WILL ERASE ALL survival.js DATA!!! ARE YOU SURE?')) {settings.survivalClone=null; settings.survival = null; saveSettings(); location.reload()}">StartOver</button>`);
