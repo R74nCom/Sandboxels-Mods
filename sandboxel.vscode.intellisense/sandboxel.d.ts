@@ -30,7 +30,7 @@ declare var onAddElementList: ((key:string,obj:element)=>void)[];
 declare var currentElementProp: Record<string,any>|null;
 declare function addElement(key:string,obj:element): void;
 declare function onAddElement(callback:(key:string,obj:element)=>void);
-declare function selectElement(element:elementNameString,properties?:Record<string,any>);
+declare function selectElement(elem:elementNameString,properties?:Record<string,any>);
 declare function selectPrevElement(): void;
 declare function mostSimilarElement(s:elementNameString): elementNameString|'';
 
@@ -417,3 +417,31 @@ declare function flash(x:number,y:number,duration:number):void;
 declare function hexToRgb(hex:colorString):colorObject;
 declare function rgbToHex(r:number,g:number,b:number):colorString;
 declare function pixelColorPick(pixel:Pixel,color?:colorString):colorString;
+/**
+ * Runs the callback every tick without pauses and runs it fast even with small FPS
+ */
+declare function runEveryTick(callback:()=>void):void;
+declare function runPerPixel(callback:(pixel:Pixel)=>void): void;
+declare function drawSquare(ctx:CanvasRenderingContext2d,color:colorString,x:number,y:number): void;
+declare function drawPixel(ctx:CanvasRenderingContext2d,x:number,y:number,color:colorString): void;
+type Settings = {
+    gravity:boolean,
+    airTemp:number,
+    /** Power of wind */
+    wind:number,
+    reactions:boolean,
+    paused:boolean,
+    simulationSpeed:number,
+    /** Ticks Per Second */
+    readonly tps:number,
+    pixelSize:number,
+    thermalView:boolean,
+    showGrid:boolean,
+    elementsHidden:boolean,
+    unlocked:elementNameString[],
+    /** Custom settings from other/this mod(s) */
+    [key: string]: any;
+};
+declare var settings:Settings;
+/** Forces game to update settings */
+declare function updateSettings(): void;
