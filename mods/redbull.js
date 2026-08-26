@@ -70,7 +70,7 @@ if (!elements.redbull_can.onCrush) {
     }
 }
 elements.redbull_slush = {
-    color: "#e6c54e",
+    color: "#f8e28d",
     behavior: behaviors.LIQUID,
     category: "liquids",
     viscosity: 15,
