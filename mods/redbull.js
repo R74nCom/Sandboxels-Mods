@@ -18,3 +18,11 @@ if (!elements.redbull.onBurn) {
         createPixel("water", pixel.x + 1, pixel.y);
     }
 }
+elements.redbull_ice = {
+    color: "#bce6f2",
+    behavior: behaviors.WALL,
+    category: "solids",
+    tempHigh: 0,
+    stateHigh: "redbull"
+};
+
