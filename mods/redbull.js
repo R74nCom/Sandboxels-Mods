@@ -35,6 +35,12 @@ elements.redbull_ice = {
     tempHigh: 0,
     stateHigh: "redbull"
 };
+if (!elements.redbull_ice.onCrush) {
+    elements.redbull_ice.onCrush = function(pixel) {
+        changePixel(pixel, "redbull_slush");
+    }
+}
+
 elements.redbull_can = {
     color: "#3671C6",
     behavior: behaviors.WALL,
