@@ -29,14 +29,14 @@ if (!elements.redbull.tick) {
 }
 
 elements.redbull_ice = {
-    color: "#bce6f2",
+    color: "#f8e28d",
     behavior: behaviors.WALL,
     category: "solids",
     tempHigh: 0,
     stateHigh: "redbull"
 };
 elements.redbull_can = {
-    color: "#cbd5e1",
+    color: "#3671C6",
     behavior: behaviors.WALL,
     category: "solids",
     density: 2700,
