@@ -18,6 +18,16 @@ if (!elements.redbull.onBurn) {
         createPixel("water", pixel.x + 1, pixel.y);
     }
 }
+if (!elements.redbull.tick) {
+    elements.redbull.tick = function(pixel) {
+        if (Math.random() < 0.02) {
+            if (isEmpty(pixel.x, pixel.y - 1)) {
+                createPixel("foam", pixel.x, pixel.y - 1);
+            }
+        }
+    }
+}
+
 elements.redbull_ice = {
     color: "#bce6f2",
     behavior: behaviors.WALL,
