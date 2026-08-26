@@ -25,4 +25,33 @@ elements.redbull_ice = {
     tempHigh: 0,
     stateHigh: "redbull"
 };
+elements.redbull_can = {
+    color: "#cbd5e1",
+    behavior: behaviors.WALL,
+    category: "solids",
+    density: 2700,
+    tempHigh: 660,
+    stateHigh: "molten_aluminum",
+    burn: 100,
+    burnTime: 2,
+    burnInto: "molten_aluminum"
+};
+
+if (!elements.redbull_can.onBurn) {
+    elements.redbull_can.onBurn = function(pixel) {
+        changePixel(pixel, "molten_aluminum");
+        createPixel("carbon_dioxide", pixel.x, pixel.y - 2);
+        createPixel("water", pixel.x - 1, pixel.y + 1);
+        createPixel("sugar", pixel.x + 1, pixel.y + 1);
+    }
+}
+
+if (!elements.redbull_can.onCrush) {
+    elements.redbull_can.onCrush = function(pixel) {
+        changePixel(pixel, "metal_scrap");
+        createPixel("redbull", pixel.x, pixel.y - 1);
+        createPixel("redbull", pixel.x + 1, pixel.y);
+    }
+}
+
 
