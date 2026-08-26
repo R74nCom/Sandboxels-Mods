@@ -63,5 +63,18 @@ if (!elements.redbull_can.onCrush) {
         createPixel("redbull", pixel.x + 1, pixel.y);
     }
 }
+elements.redbull_slush = {
+    color: "#e6c54e",
+    behavior: behaviors.LIQUID,
+    category: "liquids",
+    viscosity: 15,
+    tempHigh: 5,
+    stateHigh: "redbull",
+    tempLow: -5,
+    stateLow: "redbull_ice"
+};
+
+elements.redbull_ice.tempHigh = -4;
+elements.redbull_ice.stateHigh = "redbull_slush";
 
 
