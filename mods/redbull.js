@@ -124,7 +124,7 @@ if (!elements.redbull_sugarfree_ice.onCrush) {
 }
 
 elements.redbull_sugarfree_can = {
-    color: "#3671C6",
+    color: "#3671c6",
     behavior: behaviors.WALL,
     category: "solids",
     density: 2700,
