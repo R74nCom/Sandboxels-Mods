@@ -1,3 +1,4 @@
+(() => {
 const STYLE = `
 html, body {
 	width:  100%;
@@ -489,10 +490,11 @@ input[type="button"]:active, input[type="button"]:active:hover {
 	float:right;
 }
 #stats {
-	padding: 0px 5px 0px 5px;
+	padding: 0px 2px;
 	font-size: 0.75em;
 	height: 1.5em;
 	line-height: 1.5em;
+    align-content: center;
 	/* width:calc(100% - 5px); */
 	/* no wrapping */
 	white-space: nowrap;
@@ -824,6 +826,7 @@ button, input { /*Disable double tap zoom on mobile devices*/
 	position:relative;
 	overflow-x:hidden;
 	background-color: var(--theme-opac75);
+    line-height: 1;
 }
 #colorSelector {
 	position:absolute;
@@ -848,7 +851,9 @@ button, input { /*Disable double tap zoom on mobile devices*/
 			  user-select: none; /* Non-prefixed version, currently supported by Chrome and Opera */
 }
 .setting-span {
-	display:block;padding-bottom:0.5em
+	display:block;
+    padding-bottom: 0.5em;
+    margin-left: 1em;
 }
 .multisetting {
 	display: inline-block
@@ -1198,6 +1203,68 @@ img {
   padding-right: 1em;
   display: none;
 }
+
+#promptParent:has(#ojs_changelog) {
+    max-height: none;
+    height: 70vh;
+
+    .menuTitle {
+        margin-top: 10px;
+    }
+
+    .XButton {
+        position: sticky;
+        float: right;
+    }
+
+    #promptMenu {
+        padding: 0 !important;
+        width: 100%;
+
+        > *:not(.XButton) {
+            margin-left: 10px;
+            margin-right: 10px;
+        }
+    }
+}
+
+.ojs_ch_header {
+    font-family: "VT323";
+    font-size: 2em;
+}
+
+#ojs_changelog {
+    padding-bottom: 2em;
+}
+
+#ojs_ch_list {
+    padding-left: 1.5em;
+
+    h3 {
+        font-family: "VT323";
+        font-size: 1.6em;
+    	margin: 1em 0 0.2em -0.6em;
+    }
+
+    li {
+        font-family: Arial, Helvetica, sans-serif;
+        font-size: 1.25em;
+        padding-left: 0.3em;
+
+        &[data-ch="+"]::marker {
+            content: "+";
+            color: #00ff00;
+        }
+        &[data-ch="-"]::marker {
+            content: "-";
+            color: #ff0000;
+        }
+        &[data-ch="~"]::marker {
+            content: "~";
+            color: #ffff00;
+        }
+    }
+}
 `
 
 function shove_up(elem, count) {
@@ -1229,25 +1296,99 @@ function patch_settings() {
 		"#betterSettings\\/div\\/general.toggles-row .toggles-row,"+
 		"#settingsMenu .toggles-row"
 	)
-	console.debug(toggles_row)
 	shove_up(toggles_row, 7)
+}
+
+// Using the text changelog because it felt like it'd be nicer to get
+// old looking. Also likely to never never break this way, seeing as that
+// thing's layout's probably set in stone)
+function parse_changelog(text) {
+    const txt = text.slice(text.indexOf('['))
+
+    const container = document.createElement("div")
+    container.id = "ojs_changelog"
+    let changes;
+
+    // i cba to do this properly with a state machine
+    const version_header_regex = /^\[(.*)\]$/
+    const subheader_regex      = /^   \[(.*)\]$/
+    const change_regex         = /^    ([+-~]) (.*)$/
+
+    for (const line of txt.split("\n")) {
+        // poor man's if let
+        if (vh_match = version_header_regex.exec(line)) {
+            const header = document.createElement("h2")
+            header.classList.add("ojs_ch_header")
+            header.innerText = `[${vh_match[1]}]`
+
+            if (changes) container.append(changes)
+            container.append(header)
+
+            changes = document.createElement("ul")
+            changes.id = "ojs_ch_list"
+
+            // :P
+            if (vh_match[1] === "Public Release - Dec. 15, 2021") {
+                header.title = "where the boxels started sanding"
+            }
+        }
+        else if (subh_match = subheader_regex.exec(line)) {
+            const header = document.createElement("h3")
+            header.innerText = `[${subh_match[1]}]`
+
+            changes.append(header)
+        }
+        else if (ch_match = change_regex.exec(line)) {
+            const item = document.createElement("li")
+            item.innerText = ch_match[2]
+            item.dataset.ch = ch_match[1]
+
+            changes.append(item)
+        }
+    }
+
+    return container
 }
 
 runAfterLoad(() => {
     const new_elem = document.createElement("style")
     new_elem.innerHTML = STYLE
 
-    document.querySelector(`link[rel="stylesheet"][href="style.css"]`).replaceWith(new_elem)
+    document.querySelector(`link[rel="stylesheet"]`).replaceWith(new_elem)
     document.querySelectorAll(".XButton").forEach(x => x.innerText = "-")
 
 	patch_save_to_file()
 	patch_settings()
-});
+
+    window.showChangelog = async () => {
+        if (!text) {
+            const res = await fetch("https://neal.fun/sandboxels/changelog.txt")
+            var text = await res.text() // yes, var is deliberate
+        }
+
+        if (showingMenu === "prompt" && promptState.id === "changelog") {
+            closeMenu();
+            return;
+        }
+        promptState = {
+            text: "",
+            title: "Changelog",
+            html: parse_changelog(text).outerHTML,
+            type: "text",
+            full: true,
+            tall: true,
+            id: "changelog"
+        }
+        showPromptScreen();
+    }
+})
 
 dependOn(
     "betterSettings.js", 
     () => {
-        document.querySelectorAll(`input[id^="betterSettings"],select[id^="betterSettings"]`)
+        document
+            .querySelectorAll(`input[id^="betterSettings"],select[id^="betterSettings"]`)
             .forEach(x => x.classList.add("settingsInput"))
     }
 )
+})()

@@ -9,16 +9,18 @@ document.addEventListener("keydown", function(e) { //change prompt listener
 });
 
 function changeElementPrompt() {
-	var cmToElement = prompt("Enter what you want to change pixels to");
-	// replace spaces with underscores
-	cmToElement = cmToElement.replace(/ /g, "_");
-	cmToElementS = mostSimilarElement(cmToElement);
-	if (cmToElementS === null || cmToElementS === undefined || cmToElementS === "") {
-		alert("Element \"" + cmToElement + "\" not found! Defaulting to sand.");
-		cmToElementS = "sand";
-	};
-	changeTo = cmToElementS;
-	updateChangeDescriptions();	
+	// var cmToElement = prompt("Enter what you want to change pixels to");
+	promptInput("Enter what you want to change pixels to", (cmToElement) => {
+		// replace spaces with underscores
+		cmToElement = cmToElement.replace(/ /g, "_");
+		cmToElementS = mostSimilarElement(cmToElement);
+		if (cmToElementS === null || cmToElementS === undefined || cmToElementS === "") {
+			promptText("Element \"" + cmToElement + "\" not found! Defaulting to sand.");
+			cmToElementS = "sand";
+		};
+		changeTo = cmToElementS;
+		updateChangeDescriptions();	
+	})
 }
 
 function updateChangeDescriptions() {

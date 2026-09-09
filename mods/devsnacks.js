@@ -186,7 +186,8 @@ elements.spicy_water = {
 	category:"food",
 	state: "liquid",
 	density: 997,
-	isFood: true
+	isFood: true,
+	hidden: true
 };
 elements.broth.reactions.spice = { color1:"#ef713f", tempMin:70, chance:0.05 };
 elements.broth.reactions.spicy_water = { color1:"#ef713f", tempMin:70, chance:0.05 };
@@ -205,3 +206,43 @@ elements.nut_spread = {
 	hidden: true
 }
 elements.nut_meat.reactions.chocolate_powder = { elem1:"nut_spread", elem2:"nut_spread" }
+
+if (!elements.alcohol.reactions) elements.alcohol.reactions = {};
+elements.alcohol.reactions.plastic = { elem1:"foam", elem2:"plastic_solution", tempMin:60 };
+elements.alcohol.reactions.melted_plastic = { elem1:"foam", elem2:"plastic_solution" };
+elements.alcohol.reactions.bead = { elem1:"foam", elem2:"plastic_solution", tempMin:60 };
+
+if (!elements.alcohol_gas.reactions) elements.alcohol_gas.reactions = {};
+elements.alcohol_gas.reactions.plastic = { elem1:"foam", elem2:"plastic_solution", tempMin:60 };
+elements.alcohol_gas.reactions.melted_plastic = { elem1:"foam", elem2:"plastic_solution" };
+elements.alcohol_gas.reactions.bead = { elem1:"foam", elem2:"plastic_solution", tempMin:60 };
+
+elements.plastic_solution = {
+	color: "#a8a080",
+	behavior: behaviors.LIQUID,
+	reactions: {
+		"bleach": { elem1:"grape_flavor", elem2:["carbon_dioxide","flash"], chance:0.05 }
+	},
+	tempHigh: 150,
+	stateHigh: ["alcohol_gas", "plastic"],
+	category: "liquids",
+	state: "liquid",
+	density: 1000,
+	hidden: true
+}
+
+elements.grape_flavor = {
+	color: "#cca3cc",
+	grain: 2,
+	behavior: behaviors.POWDER,
+	reactions: {
+		"water": { elem1:null, elem2:"juice", color2:"#291824" },
+		"seltzer": { elem1:null, elem2:"soda", color2:"#450a47" }
+	},
+	tempHigh: 400,
+	stateHigh: "smoke",
+	category: "food",
+	state: "solid",
+	density: 1590,
+	hidden: true
+}

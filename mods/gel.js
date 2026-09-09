@@ -1,85 +1,66 @@
-behaviors.GEL = function(pixel) {
-    doDefaults(pixel)
-    pixel.sticky = true
-    let sticking = false
+let maxSticky = 5
 
-    // -y
-    if ( !isEmpty(pixel.x, pixel.y-1) & getPixel(pixel.x, pixel.y-1) != null ) {
-        let stickPixel = getPixel(pixel.x, pixel.y-1)
+let tryStick = function(pixel) {
+    if (pixel === null) {return false}
 
-        if ( !stickPixel.sticky & elements[stickPixel.element].state != "gas" ) {
-            sticking = true
-            return
-        }
-    }
+    let element = pixel.element
+    let x = pixel.x
+    let y = pixel.y
 
-    // -x
-    if ( !isEmpty(pixel.x-1, pixel.y) & getPixel(pixel.x-1, pixel.y) != null ) {
-        let stickPixel = getPixel(pixel.x-1, pixel.y)
-        let behindPixel = getPixel(pixel.x-2, pixel.y)
+    let offsets = [
+        [-1, 0],
+        [1, 0],
+        [0, -1],
+        [0, 1]
+    ]
 
-        if ( !stickPixel.sticky & elements[stickPixel.element].state != "gas" ) {
-            sticking = true
-            tryMove(pixel, pixel.x-1, pixel.y+1)
-            return
-        } else if (behindPixel != null & stickPixel.sticky) {
-            if (!behindPixel.sticky & elements[behindPixel.element].state != "gas") {
-                //sticking = true
-                tryMove(pixel, pixel.x-1, pixel.y+1)
+    let sticky = 0
+    for (const offset of offsets) {
+        x2 = x + offset[0]
+        y2 = y + offset[1]
+
+        if (getPixel(x2, y2) && !canMove(pixel, x2, y2)) {
+            if (elements[getPixel(x2, y2).element].behavior !== elements[element].behavior) {
+                let state = elements[getPixel(x2, y2).element].state
+                if (state === "liquid" || state === "gas") {
+                    continue
+                } else {
+                    sticky = maxSticky
+                }
+            } else if (getPixel(x2, y2).sticky && getPixel(x2, y2).sticky - 1 > sticky) {
+                sticky = getPixel(x2, y2).sticky - 1
             }
         }
     }
-    // +x
-    if ( !isEmpty(pixel.x+1, pixel.y) & getPixel(pixel.x+1, pixel.y) != null ) {
-        let stickPixel = getPixel(pixel.x+1, pixel.y)
-        let behindPixel = getPixel(pixel.x+2, pixel.y)
-
-        if ( !stickPixel.sticky & elements[stickPixel.element].state != "gas" ) {
-            sticking = true
-            tryMove(pixel, pixel.x+1, pixel.y+1)
-            return
-        } else if ( behindPixel != null & stickPixel.sticky ) {
-            if (!behindPixel.sticky & elements[behindPixel.element].state != "gas" ) {
-                //sticking = true
-                tryMove(pixel, pixel.x+1, pixel.y+1)
-            }
-        }
-    }
-
-
-
-
-    if ( !isEmpty(pixel.x, pixel.y+1) ) {
-        let stickPixel = getPixel(pixel.x, pixel.y+1)
-        if (stickPixel != null) {
-            if ( !stickPixel.sticky & elements[stickPixel.element].state != "gas" ) {
-                sticking = true
-            }
-        } else {
-            sticking = true
-        }
-    }
-
-    // normal fall
-    if (!tryMove(pixel, pixel.x, pixel.y+1) & Math.random() > 0.2 ) {
-        if (!tryMove(pixel, pixel.x+1, pixel.y+1)) {
-            tryMove(pixel, pixel.x-1, pixel.y+1)
-        }
-    } else {
-        return
-    }
-
-    // the umm wandering thing
-    if (Math.random() < 0.2) {
-        if (sticking) {return}
-
-        if (Math.random() > 0.5) {
-            tryMove(pixel, pixel.x+1, pixel.y)
-        } else {
-            tryMove(pixel, pixel.x-1, pixel.y)
-        }
-    }
+    pixel.sticky = sticky
+    return sticky > 0
 }
+
+behaviors.GEL = function(pixel) {
+    if (pixel.start === pixelTicks) {return}
+	if (pixel.charge !== undefined && elements[pixel.element].behaviorOn !== undefined) {
+		pixelTick(pixel);
+		return;
+	}
+
+    let x = pixel.x
+    let y = pixel.y
+
+    if (!tryStick(pixel)) {
+        if (!tryMove(pixel, x, y+1) && Math.random() > 0.5) {
+            if (Math.random() > 0.5) {
+                tryMove(pixel, x-1, y+1)
+            } else {
+                tryMove(pixel, x+1, y+1)
+            }
+            
+        }
+    }
+
+    doDefaults(pixel)
+}
+
+// normal gel
 
 elements.gel = {
     color: "#f7c472",
@@ -98,7 +79,7 @@ elements.gel = {
 elements.gel_ice = {
     color: "#fad38c",
     behavior: behaviors.WALL,
-    category: "solids",
+    category: "states",
     state: "solid",
     tempHigh: -95,
     stateHigh: "gel",
@@ -113,4 +94,39 @@ elements.gel_gas = {
     tempLow: 595,
     stateLow: "gel",
     density: 0.6,
+}
+
+// explosive gel
+
+elements.explosive_gel = {
+    color: "#fc0c30",
+    behavior: behaviors.GEL,
+    behaviorOn: [
+		"XX|XX|XX",
+		"XX|EX:10|XX",
+		"XX|XX|XX"
+	],
+    conduct: 1,
+	burn: 100,
+	burnTime: 1,
+	burnInto: "explosion",
+    category: "weapons",
+    state: "liquid",
+    tempHigh: 600,
+    stateHigh: "explosion",
+    tempLow: -100,
+    stateLow: "explosive_gel_ice",
+    density: 1450,
+    stain: 0.05,
+    viscosity: 5000,
+}
+
+elements.explosive_gel_ice = {
+    color: "#f94560",
+    behavior: behaviors.WALL,
+    category: "states",
+    state: "solid",
+    tempHigh: -95,
+    stateHigh: "explosive_gel",
+    density: 917,
 }

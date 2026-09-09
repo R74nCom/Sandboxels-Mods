@@ -8,7 +8,7 @@ const menu = { // Just change the values in this.
 	pauseButton: 'Пауза',
 	resetButton: 'Сброс',
 	replaceButton: 'Замена',
-	elemSelectButton: 'Э',
+	// elemSelectButton: 'Э',
 	tpsButton: 'TPS',
 	infoButton: 'Инфо',
 	savesButton: 'Сохранения',

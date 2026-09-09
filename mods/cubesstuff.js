@@ -1,6 +1,6 @@
 /* 
 Use intellisense for sandboxels modding here:
-    to show availavle functions and show global variables
+    to show availavle functions and show global letiables
     https://github.com/R74nCom/sandboxels-types
 */
 
@@ -63,6 +63,8 @@ Changes:
 Technical:
     New helpers for squareCoords and adjacentCoords
     Rainbow color preset
+
+Note: This will no longer be accurate. check github puuls to check additions yourself
 */
 
 /**
@@ -99,27 +101,9 @@ elements.button = {
     category: "machines",
     behavior: behaviors.WALL,
     state: "solid",
-    onSelect: function () {
-        logMessage("Click the button with no elements equipped to charge the button.")
-    },
-    properties: {
-        clicked: false,
-        clickTime: 1,
-    },
     onClicked: function (pixel) {
-        pixel.clicked = true
-        pixel.clickTime = 1
+        pixel.charge = 1
     },
-    tick: function (pixel) {
-        if (pixel.clicked == true && pixel.clickTime > 0) {
-            pixel.charge = 1
-            pixel.clickTime--
-        }
-        else if (pixel.clicked == true && pixel.clickTime <= 0) {
-            pixel.clicked = false
-            pixel.charge = 0
-        }
-    }
 }
 
 /**
@@ -204,10 +188,10 @@ elements.disco_ball = {
         if (!pixel.charge) {
             pixel.charge = 0
         }
-        for (var i = 0; i < squareCoords.length; i++) {
-            var coord = squareCoords[i];
-            var x = pixel.x + coord[0];
-            var y = pixel.y + coord[1];
+        for (let i = 0; i < squareCoords.length; i++) {
+            let coord = squareCoords[i];
+            let x = pixel.x + coord[0];
+            let y = pixel.y + coord[1];
             if (pixel.charge > 0) {
                 pixel.color = randomColor()
                 if (isEmpty(x, y)) {
@@ -251,10 +235,10 @@ elements.fire_extinguisher_powder = {
     ],
     extinguish: true,
     tick: function (pixel) {
-        for (var i = 0; i < adjacentCoords.length; i++) {
-            var coords = adjacentCoords[i];
-            var x = pixel.x + coords[0];
-            var y = pixel.y + coords[1];
+        for (let i = 0; i < adjacentCoords.length; i++) {
+            let coords = adjacentCoords[i];
+            let x = pixel.x + coords[0];
+            let y = pixel.y + coords[1];
             const current = getPixel(x, y)
             if (current?.burning === true) {
                 current.burning = false
@@ -343,10 +327,10 @@ elements.gasoline = {
  * @param {Pixel} pixel
  */
 elements.molten_sulfur.tick = function (pixel) {
-    for (var i = 0; i < adjacentCoords.length; i++) {
-        var coords = adjacentCoords[i];
-        var x = pixel.x + coords[0];
-        var y = pixel.y + coords[1];
+    for (let i = 0; i < adjacentCoords.length; i++) {
+        let coords = adjacentCoords[i];
+        let x = pixel.x + coords[0];
+        let y = pixel.y + coords[1];
         if (isEmpty(x, y) && Math.random() <= 0.0005) {
             createPixel("stench", x, y)
             let p = getPixel(x, y)
@@ -376,10 +360,10 @@ elements.moss = {
     color: ["#007900", "#006000", "#008300"],
     behavior: behaviors.POWDER,
     tick: function (pixel) {
-        for (var i = 0; i < squareCoords.length; i++) {
-            var coords = squareCoords[i];
-            var x = pixel.x + coords[0];
-            var y = pixel.y + coords[1];
+        for (let i = 0; i < squareCoords.length; i++) {
+            let coords = squareCoords[i];
+            let x = pixel.x + coords[0];
+            let y = pixel.y + coords[1];
             if (isEmpty(x, y) && Math.random() <= 0.01 && getPixel(pixel.x, pixel.y + 1) && getPixel(pixel.x, pixel.y + 1)?.element !== "moss") {
                 createPixel('moss', x, y)
             }
@@ -551,10 +535,10 @@ elements.lighter_fluid = {
     density: 750,
     tick: function (pixel) {
         pixel.gasMade ??= 0
-        for (var i = 0; i < squareCoordsShuffle.length; i++) {
-            var coord = squareCoordsShuffle[i];
-            var x = pixel.x + coord[0];
-            var y = pixel.y + coord[1];
+        for (let i = 0; i < squareCoordsShuffle.length; i++) {
+            let coord = squareCoordsShuffle[i];
+            let x = pixel.x + coord[0];
+            let y = pixel.y + coord[1];
             if (isEmpty(x, y) && Math.random() >= 0.75) {
                 createPixel("lighter_fluid_gas", x, y)
                 pixel.gasMade += 1
@@ -601,10 +585,10 @@ elements.mold = {
     },
     tick: function (pixel) {
         let moldable = ["meat", "cheese", "rotten_meat", "rotten_cheese"]
-        for (var i = 0; i < squareCoords.length; i++) {
-            var coords = squareCoords[i];
-            var x = pixel.x + coords[0];
-            var y = pixel.y + coords[1];
+        for (let i = 0; i < squareCoords.length; i++) {
+            let coords = squareCoords[i];
+            let x = pixel.x + coords[0];
+            let y = pixel.y + coords[1];
             const belowPixel = getPixel(pixel.x, pixel.y + 1)
             if (isEmpty(x, y) && Math.random() <= 0.01 && belowPixel && moldable.includes(belowPixel.element)) {
                 createPixel('mold', x, y)
@@ -656,10 +640,10 @@ elements.randomizer = {
     },
     tick: function (pixel) {
         pixel.color = randomColor()
-        for (var i = 0; i < adjacentCoords.length; i++) {
-            var coords = adjacentCoords[i];
-            var x = pixel.x + coords[0];
-            var y = pixel.y + coords[1];
+        for (let i = 0; i < adjacentCoords.length; i++) {
+            let coords = adjacentCoords[i];
+            let x = pixel.x + coords[0];
+            let y = pixel.y + coords[1];
             let p = getPixel(x, y)
             if (!isEmpty(x, y) && !outOfBounds(x, y)) {
                 if (p && p.element !== "randomizer") {
@@ -695,13 +679,14 @@ elements.rocket.ignore.push("randomizer")
 elements.antibomb.tick = function (pixel) {
     doDefaults(pixel)
     if (!tryMove(pixel, pixel.x, pixel.y + 1)) {
+        let elem;
         if (!outOfBounds(pixel.x, pixel.y + 1)) {
             // @ts-ignore
-            var elem = getPixel(pixel.x, pixel.y + 1).element;
+            elem = getPixel(pixel.x, pixel.y + 1).element;
             if (elements[elem].isGas) { return }
         }
         else {
-            var elem = "smoke";
+            elem = "smoke";
         }
         if (elem !== "antibomb" && elem !== "randomizer") {
             explodeAt(pixel.x, pixel.y, 8, elem)
@@ -858,7 +843,7 @@ elements.rgb_led = {
     },
 
     onPlace: (pixel) => {
-        var ledColor = RGBToHex([globals.red, globals.green, globals.blue]);
+        let ledColor = RGBToHex([globals.red, globals.green, globals.blue]);
         pixel.color = ledColor;
     }
 };
@@ -931,7 +916,7 @@ elements.plank = {
     forceSaveColor: true
 }
 
-elements.sand.pressInto = "packed_sand";
+elements.sand.pressInto = "sandstone";
 elements.sand.resistPress = 0.2
 elements.snow.pressInto = "packed_snow";
 elements.snow.resistPress = 0.2
@@ -1212,8 +1197,8 @@ elements.phosphor = {
     state: "solid",
 };
 
-elements.packed_sand.pressInto = "sandstone"
-elements.packed_sand.resistPress = 0.7
+// elements.packed_sand.pressInto = "sandstone"
+// elements.packed_sand.resistPress = 0.7
 elements.packed_snow.pressInto = "ice"
 elements.packed_snow.resistPress = 0.7
 
@@ -1286,7 +1271,7 @@ elements.neon_tube = {
         drawSquare(ctx, pixel.color, pixel.x, pixel.y, undefined, alpha);
         if (pixel.alpha === 0) return;
         let edge = false;
-        for (var i = 0; i < adjacentCoords.length; i++) {
+        for (let i = 0; i < adjacentCoords.length; i++) {
             let coords = adjacentCoords[i];
             let x = pixel.x + coords[0];
             let y = pixel.y + coords[1];
@@ -2098,10 +2083,10 @@ elements.black_hole = {
         pixel.edge = false;
         pixel.color = "#111111";
 
-        for (var i = 0; i < adjacentCoords.length; i++) {
-            var coords = adjacentCoords[i];
-            var x = pixel.x + coords[0];
-            var y = pixel.y + coords[1];
+        for (let i = 0; i < adjacentCoords.length; i++) {
+            let coords = adjacentCoords[i];
+            let x = pixel.x + coords[0];
+            let y = pixel.y + coords[1];
             if (!outOfBounds(x, y)) {
                 let neighbor = getPixel(x, y);
                 if (!neighbor || elements[neighbor.element].movable !== elements[pixel.element].movable) {
@@ -2170,9 +2155,9 @@ elements.black_hole = {
                 }
             }
             if (globals.blackHoleExpand) {
-                for (var i = 0; i < adjacentCoords.length; i++) {
-                    var x = pixel.x + adjacentCoords[i][0];
-                    var y = pixel.y + adjacentCoords[i][1];
+                for (let i = 0; i < adjacentCoords.length; i++) {
+                    let x = pixel.x + adjacentCoords[i][0];
+                    let y = pixel.y + adjacentCoords[i][1];
                     if (pixel.absorbed >= 30 && isEmpty(x, y)) {
                         createPixel("black_hole", x, y)
                         pixel.absorbed = 0
@@ -2208,23 +2193,23 @@ elements.white_hole = {
         renderPresets.HEATGLOW(pixel, ctx);
         if (pixel.alpha === 0) return;
         let edge = false;
-        for (var i = 0; i < adjacentCoords.length; i++) {
-            var coords = adjacentCoords[i];
-            var x = pixel.x + coords[0];
-            var y = pixel.y + coords[1];
+        for (let i = 0; i < adjacentCoords.length; i++) {
+            let coords = adjacentCoords[i];
+            let x = pixel.x + coords[0];
+            let y = pixel.y + coords[1];
             // @ts-ignore
             if (isEmpty(x, y) || (!outOfBounds(x, y) && elements[pixelMap[x][y].element].movable !== elements[pixel.element].movable)) {
                 edge = true;
                 break;
             }
         }
-        if (edge) { drawSquare(ctx, "rgba(0,0,0," + (pixel.alpha || 1) / 4 + ")", pixel.x, pixel.y) }
+        if (edge) { drawSquare(ctx, "rgba(127,127,127," + (pixel.alpha || 1) / 4 + ")", pixel.x, pixel.y) }
     },
     tick(pixel) {
-        for (var i = 0; i < squareCoords.length; i++) {
-            var coord = squareCoords[i];
-            var x = pixel.x + coord[0];
-            var y = pixel.y + coord[1];
+        for (let i = 0; i < squareCoords.length; i++) {
+            let coord = squareCoords[i];
+            let x = pixel.x + coord[0];
+            let y = pixel.y + coord[1];
             if (isEmpty(x, y) && !outOfBounds(x, y) && Math.random() <= 0.0005) {
                 createPixel(
                     ["proton", "neutron", "electric",
@@ -2415,9 +2400,9 @@ elements.cacao_stem = {
             }
             if (!isEmpty(pixel.x + 1, pixel.y - 1) && !isEmpty(pixel.x, pixel.y - 1) && !isEmpty(pixel.x - 1, pixel.y - 1) && Math.random() <= 0.005) {
                 shuffleArray(adjacentCoordsShuffle)
-                for (var i = 0; i < adjacentCoordsShuffle.length; i++) {
-                    var x = pixel.x + adjacentCoordsShuffle[i][0];
-                    var y = pixel.y + adjacentCoordsShuffle[i][1];
+                for (let i = 0; i < adjacentCoordsShuffle.length; i++) {
+                    let x = pixel.x + adjacentCoordsShuffle[i][0];
+                    let y = pixel.y + adjacentCoordsShuffle[i][1];
                     if (isEmpty(x, y) && !pixel.fruitMade) {
                         createPixel("cacao_fruit", x, y)
                         pixel.fruitMade = true
@@ -2908,13 +2893,13 @@ globals.rRGBLed = false
 globals.rCustomBomb = false
 dependOn("betterSettings.js", () => {
     // @ts-ignore
-    var Reset = new SettingsTab("Reset");
+    let Reset = new SettingsTab("Reset");
     // @ts-ignore
-    var resetCircle = new Setting("Reset circle value and radius on reset", "Reset circle", settingType.BOOLEAN, false, defaultValue = false);
+    let resetCircle = new Setting("Reset circle value and radius on reset", "Reset circle", settingType.BOOLEAN, false, defaultValue = false);
     // @ts-ignore
-    var resetRGBLed = new Setting("Reset RGB Led value on reset", "Reset RGB Led", settingType.BOOLEAN, false, defaultValue = false);
+    let resetRGBLed = new Setting("Reset RGB Led value on reset", "Reset RGB Led", settingType.BOOLEAN, false, defaultValue = false);
     // @ts-ignore
-    var resetCustomBomb = new Setting("Reset Custom Bomb value on reset", "Reset Custom Bomb", settingType.BOOLEAN, false, defaultValue = false);
+    let resetCustomBomb = new Setting("Reset Custom Bomb value on reset", "Reset Custom Bomb", settingType.BOOLEAN, false, defaultValue = false);
     // @ts-ignore
     Reset.registerSettings("Reset", resetRGBLed)
     // @ts-ignore
@@ -3275,7 +3260,7 @@ elements.random_teleporter = {
         }
 
         shuffleArray(squareCoordsShuffle)
-        for (var i = 0; i < squareCoordsShuffle.length; i++) {
+        for (let i = 0; i < squareCoordsShuffle.length; i++) {
             let coord = squareCoordsShuffle[i];
             let x = pixel.x + coord[0];
             let y = pixel.y + coord[1];
@@ -3532,6 +3517,211 @@ elements["🐔poolnoodle"] = {
         if (Math.random() <= 0.7) {
             Math.random() <= 0.5 ? tryMove(pixel, pixel.x + 1, pixel.y) : tryMove(pixel, pixel.x - 1, pixel.y)
         }
+    }
+}
+
+globals.turbineDir = 0
+elements.turbine = {
+    category: "machines",
+    behavior: behaviors.WALL,
+    color: ["#b8b8b8", "#888888", "#707070"],
+    colorKey: {
+        "L": "#b8b8b8",
+        "M": "#888888",
+        "D": "#707070"
+    },
+    colorPattern: [
+        "LMD",
+        "DLM",
+        "MDL"
+    ],
+    onSelect() {
+        promptDir("the direction for the turbine to face", (v) => {
+            globals.turbineDir = v
+        })
+    },
+    onPlace(pixel) {
+        pixel.dir = globals.turbineDir
+        const match = pixel.color.match(/rgb\((\d+),(\d+),(\d+)\)/)
+        if (match) {
+            const hex = RGBToHex([+match[1], +match[2], +match[3]])
+            if (isRoughlySameColor(hex, "#b8b8b8", 25)) pixel.type = "L"
+            else if (isRoughlySameColor(hex, "#888888", 25)) pixel.type = "M"
+            else if (isRoughlySameColor(hex, "#707070", 25)) pixel.type = "D"
+        } else {
+            console.error("Could not parse color")
+        }
+        switch (pixel.dir) {
+            case 0: {
+                pixel.dirVector = [1, 0]
+                break;
+            }
+            case 1: {
+                pixel.dirVector = [0, 1]
+                break;
+            }
+            case 2: {
+                pixel.dirVector = [-1, 0]
+                break;
+            }
+            case 3: {
+                pixel.dirVector = [0, -1]
+                break;
+            }
+        }
+    },
+    hoverStat(pixel) {
+        return pixel.type
+    },
+    tick(pixel) {
+        let x = pixel.x + pixel.dirVector[0]
+        let y = pixel.y + pixel.dirVector[1]
+        const nextTurbine = getPixel(x, y)
+        if (pixel.con) {
+            if (nextTurbine?.element === "turbine") {
+                if (!nextTurbine.con) {
+                    nextTurbine.con = pixel.con;
+                    nextTurbine.con.x = nextTurbine.x;
+                    nextTurbine.con.y = nextTurbine.y;
+                    nextTurbine.filterTick = pixelTicks;
+                    pixel.con = undefined;
+                }
+            } else if (isEmpty(x, y)) {
+                delete pixel.con.del;
+                pixel.con.x = x;
+                pixel.con.y = y;
+                pixelMap[x][y] = pixel.con;
+                currentPixels.push(pixel.con);
+                pixel.con = undefined;
+            }
+        }
+        const current = getPixel(pixel.x - pixel.dirVector[0], pixel.y - pixel.dirVector[1])
+        if (!current) return;
+        if (elements[current.element].movable) {
+            if (!pixel.con) {
+                if (Math.random() <= 0.8) return;
+                pixel.con = current
+                deletePixel(current.x, current.y)
+                pixel.con.x = pixel.x;
+                pixel.con.y = pixel.y;
+                pixel.con.del;
+                pixel.charge = 1
+            }
+        }
+    },
+    canContain: true,
+    state: "solid",
+    movable: false,
+    conduct: 1,
+}
+
+/**
+ * 
+ * @param {string} _langCode
+ * @param {string} element 
+ * @param {string} translation 
+ */
+function addTranslation(_langCode, element, translation) {
+    if (langCode === _langCode) {
+        lang[element] = translation
+    }
+}
+
+/**
+ * @type {Record<string, {element: string, translation: string}[]>}
+ */
+const TRANSLATIONS = {
+    "qha": [
+        { element: "sandstone", translation: "mayi-i_mayi" },
+        { element: "gasoline", translation: "puyae_mayimo" },
+        { element: "chalk", translation: "maciyoo_mayi-i" },
+        { element: "wet_chalk", translation: "maciyoo_mayi-i_mae" },
+        { element: "chalk_powder", translation: "oye_maciyoo_mayi-i" },
+        { element: "wet_chalk_powder", translation: "oye_maciyoo_mayi-i_mae" },
+        { element: "lighter_fluid", translation: "moyae_mae" },
+        { element: "lighter_fluid_gas", translation: "lamape_moyae_mae" },
+        { element: "glow_stick", translation: "samo_mi-oosa" },
+        { element: "glow_stick_liquid", translation: "samo_mi-oosa_mae" },
+        { element: "glow_stick_ice", translation: "ope_samo_mi-oosa" },
+        { element: "roman_cement", translation: "halayi_Rome_mae_mayiya" },
+        { element: "roman_concrete", translation: "halayi_Rome_mayiya" },
+        { element: "mold", translation: "mimaci-e-omapaemura-i" }, // taken from lexember 2024
+        { element: "moss", translation: "i_mi-o-i_mi" }, // i have no clue if this one works (should mean small [small fungus plant (fern)])
+        { element: "pineapple", translation: "a-oo_hasasamo_mi-ooya" },
+        { element: "pineapple_seed", translation: "a-oo_hasasamo_mi-ooya_mi-i" },
+        { element: "pineapple_stem", translation: "a-oo_hasasamo_mi-ooya_misa" },
+        { element: "dog", translation: "macahala" },
+        { element: "carrot", translation: "samoca_mise_miya" },
+        { element: "carrot_seed", translation: "samoca_mise_miya_mi-i" },
+        { element: "lithium", translation: "payaelama" },
+        { element: "obsidian", translation: "mayi_samomayi-i" },
+        { element: "obsidian_shard", translation: "oye_mayi_samomayi-i" },
+        { element: "nordic_gold", translation: "halaya_Parusoo-eya_mayipa" },
+        { element: "nordic_gold_coin", translation: "halaya_Parusoo-eya_mayipa_lamipa" },
+        { element: "aerogel", translation: "lamape-a" },
+        { element: "quartz", translation: "oosamoce_mayi-ae" },
+        { element: "quartz_powder", translation: "oye_oosamoce_mayi-ae" },
+        { element: "rubidium", translation: "samocimomolama" },
+        { element: "lapis_lazuli", translation: "samoco_mae-oo_mayi-ae" },
+        { element: "lapis_lazuli_powder", translation: "oye_samoco_mae-oo_mayi-ae" },
+        { element: "uv_light", translation: "oosamoca_mae-oo-e_samo" },
+        { element: "custom_bomb", translation: "eya-e_poomoyo" },
+        { element: "pie", translation: "lacooya-o_paema" },
+        { element: "pie_crust", translation: "lacooya-o_paema_mihaya" },
+        { element: "filter", translation: "oyecaeca-a" },
+        { element: "paper_filter", translation: "lami_oyecaeca-a" },
+        { element: "indestructable_filter", translation: "poo-e_oyecaeca-a" },
+        { element: "note_block", translation: "halacayi-a" },
+        { element: "random_teleporter", translation: "ae-o-e_yoo" },
+        { element: "turbine", translation: "mapapayae" },
+        { element: "randomizer", translation: "ae-o-e_yura" },
+        { element: "circle", translation: "lacooya-o" },
+        { element: "dice", translation: "a-ae-o-e_lacoo-i" }, // not sure about this one too
+        { element: "realistic_ball", translation: "a-e_pa_lacooya-o" },
+        { element: "black_hole", translation: "o-a-e-a" },
+        { element: "white_hole", translation: "o-o-a-e-a" },
+        { element: "random_word_generator", translation: "ae-o-e_halaci" },
+        { element: "fill_all", translation: "oo-u-oo" },
+        { element: "element_fill_all", translation: "a_oo-u-oo" },
+        { element: "pulsing_color", translation: "lacoo-i_CA_samoca_ayoo" },
+        { element: "element_line", translation: "a_lacooyi" },
+        { element: "deprecated", translation: "sama-oo" },
+        { element: "extras", translation: "ayoo-e" },
+        { element: "cubesstuff_pyrite", translation: "ayooyesae_Yiya_a_ocehi_mayipa" },
+        { element: "rgb_led", translation: "eya-e_samoya-i" },
+        { element: "adjustable_heater", translation: "eya-e_yamosu" },
+        { element: "adjustable_cooler", translation: "eya-e_ya-opaso" },
+        { element: "robot", translation: "hacaya" },
+        { element: "robot_head", translation: "hacayaca" },
+        { element: "robot_body", translation: "hacayasa" },
+        { element: "lithium_battery", translation: "payaelama_payae" },
+        { element: "faulty_wire", translation: "pupayae-o" },
+        { element: "plank", translation: "yecaece_mi-oosa" },
+        { element: "cardboard", translation: "poo-e_lami" },
+        { element: "disco_ball", translation: "samoce_lacooya-o" },
+        { element: "neon_tube", translation: "larami-ooya-oohalayisamolama_mi-oosa" },
+        { element: "asbestos", translation: "mayi-ae-o" },
+        { element: "phosphor", translation: "samosu_mayi-i-e" },
+        { element: "press", translation: "yecaecu" },
+        { element: "polish", translation: "mae-u" },
+        { element: "paint_using_hex", translation: "samocayu_u_lacoo-i-opu-ooEMA" },
+        { element: "calculator", translation: "lacooyae" },
+        { element: "replace_all_of_element", translation: "ayoo-u-oo_oo_e_a" },
+        { element: "molten_lithium", translation: "payaelama_momae" },
+        { element: "lithium_gas", translation: "lamapa_payaelama" },
+        { element: "liquid_rubidium", translation: "samocimomolama_mae" },
+        { element: "rubidium_gas", translation: "lamapa_samocimomolama" },
+        { element: "molten_nordic_gold", translation: "halaya_Parusoo-eya_mayipa_momae" },
+        { element: "molten_chalk", translation: "maciyoo_mayi-i_momae" },
+    ],
+    "en_gb": [ // british english
+        { element: "pulsing_color", translation: "pulsing_colour" }
+    ]
+}
+for (const code of Object.keys(TRANSLATIONS)) {
+    const translationArr = TRANSLATIONS[code]
+    for (const translation of translationArr) {
+        addTranslation(code, translation.element, translation.translation)
     }
 }
 

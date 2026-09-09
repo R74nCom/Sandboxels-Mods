@@ -74,6 +74,7 @@ function showPromptScreen() {
 			promptInput.style.display = "none";
 			promptChoices.style.display = "none";
 			promptDirs.style.display = "none";
+			dropDown.style.display = "none";
 			promptConfirm.classList.remove("danger");
 			if (promptState.type === "text") {
 				promptOK.style.display = "flex";
@@ -127,10 +128,11 @@ function showPromptScreen() {
 			}
 			if (promptState.full) promptParent.classList.add("full");
 			else promptParent.classList.remove("full");
-			if (promptState.tall) promptParent.classList.add("menuParentTall");
-			else promptParent.classList.remove("menuParentTall");
 			promptParent.style.display = "block";
+			if (promptState.tall || promptParent.clientHeight >= 300) promptParent.classList.add("menuParentTall");
+			else promptParent.classList.remove("menuParentTall");
 			showingMenu = "prompt";
+			checkMenuState();
 			if (promptState.type === "input") {
 				document.getElementById("promptInput").focus();
 				document.getElementById("promptInput").select();

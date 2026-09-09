@@ -1,17 +1,16 @@
 // Bismuth is the best element
-/*
-X heat conducting wall
-X aerogel (?)
-X rename global heat conductor to heat portal, add channels
-X instant wire
-X heat pipe, smart variant
-X rename specific machines to smart machines
-*/
 async function _nousersthingsprompt(message, defaultValue = "") { // thanks to ggod for updated prompt function
     return new Promise(resolve => {
         promptInput(message, (result) => {
             resolve(result);
         }, "nousersthings.js is asking you...", defaultValue);
+    })
+}
+async function _nousersthingslistprompt(message, choices) {
+    return new Promise(resolve => {
+        promptChoose(message, choices, (result) => {
+            resolve(result);
+        }, "nousersthings.js is asking you...");
     })
 }
 behaviors.RADSOLID = [
@@ -281,7 +280,7 @@ elements.technetium = {
             var x = pixel.x+coord[0];
             var y = pixel.y+coord[1];
             if (isEmpty(x, y)){
-                createPixel("positron", x, y)
+                createPixel("electric", x, y)
                 break;
             }
         }
@@ -306,7 +305,7 @@ elements.technetium = {
             var x = pixel.x+coord[0];
             var y = pixel.y+coord[1];
             if (isEmpty(x, y)){
-                createPixel("positron", x, y)
+                createPixel("electric", x, y)
                 break;
             }
         }
@@ -2042,13 +2041,28 @@ elements.healing_serum = {
     },
     ignore: ["wall", "cloner", "e_cloner", "border"]
 }
-var rayElement = "ray"
-var rayStoppedByWalls = false
+let raySpecialFunctions = {
+    "shock": (pixel, emitter) => {
+        if (pixel.element == "ray_emitter" || pixel.element == "specific_ray_emitter"){return;}
+        chargePixel(pixel);
+        if (elements[pixel.element].iConduct){
+            iUpdateAll(pixel)
+        }
+    },
+    "heat": (pixel, emitter) => {pixel.temp += 10; pixelTempCheck(pixel)},
+    "cool": (pixel, emitter) => {pixel.temp -= 10; pixelTempCheck(pixel)},
+    "smash": (pixel, emitter) => {if (isBreakable(pixel)){breakPixel(pixel)}},
+    "paint": (pixel, emitter) => {pixel.color = emitter.color},
+    "incinerate": (pixel, emitter) => {pixel.temp += 100000; pixelTempCheck(pixel)},
+    "room_temp": (pixel, emitter) => {pixel.temp = currentSaveData.airtemp; pixelTempCheck(pixel)},
+    "erase": (pixel, emitter) => (deletePixel(pixel.x, pixel.y))
+}
 elements.ray_emitter = {
     color: "#ff9c07",
     behavior: behaviors.WALL,
     category: "machines",
     movable: false,
+    /*
     onSelect: async function(pixel){
         var rayans = await _nousersthingsprompt("Please input the desired element of this ray emitter",(rayElement||undefined));
         if (!rayans) { return }
@@ -2088,7 +2102,7 @@ elements.ray_emitter = {
                                 pixelMap[lx][ly].rColor = pixel.color
                                 pixelMap[lx][ly].color = pixel.color
                             }
-                            if (["pointer", "flash", "explosion"].includes(pixel.rayElement)){
+                            if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.rayElement)){
                                 pixelMap[lx][ly].color = pixel.color
                             }
                         } else if (!isEmpty(lx, ly, true)){
@@ -2105,8 +2119,116 @@ elements.ray_emitter = {
             }
         }
     },
+    */
+    onSelect: async function(){
+        let ans1 = await _nousersthingsprompt("What should this ray emitter emit?", "ray")
+        ans1 = mostSimilarElement(ans1)
+        let ans2 = await _nousersthingslistprompt("What type of wall behavior should it have?", ["Stop at walls", "Overwrite walls", "Continue past walls"])
+        const translateans = {
+            "Stop at walls": 1,
+            "Overwrite walls": 2,
+            "Continue past walls": 3
+        }
+        ans2 = translateans[ans2]
+        currentElementProp = {emit:ans1,mode:ans2}
+    },
+    properties: {
+        lastUpdate: 0
+    },
+    tick: function(pixel){
+        if (typeof pixel.rayElement != "undefined"){pixel.emit = pixel.rayElement; delete pixel.rayElement;}
+        if (typeof pixel.rayStoppedByWalls != "undefined"){pixel.mode = pixel.rayStoppedByWalls ? 1 : 3; delete pixel.rayStoppedByWalls}
+        if (typeof pixel.emit == "undefined" || typeof pixel.mode == "undefined"){{changePixel(pixel, "flash"); logMessage("An emitter without valid properties was attempted to be placed."); return;}}
+        let special = Object.keys(raySpecialFunctions).includes(pixel.emit)
+        for (let i of squareCoords){
+            let x = pixel.x + i[0]
+            let y = pixel.y + i[1]
+            if (!isEmpty(x, y, true)){
+                let otherPixel = pixelMap[x][y]
+                if (otherPixel.charge){
+                    if (otherPixel.element == "insulated_wire"){
+                        if (Math.abs(i[0]+i[1]) != 1){continue;} // funny way to check for direct adjacency
+                    }
+                    let jcoords = lineCoords(pixel.x-i[0],pixel.y-i[1],pixel.x-(Math.max(width, height)*i[0]),pixel.y-(Math.max(width, height)*i[1]),1)
+                    for (let j of jcoords){
+                        if (!isEmpty(j[0], j[1], true)){
+                            let hitPixel = pixelMap[j[0]][j[1]]
+                            //console.log(hitPixel)
+                            if (special){
+                                raySpecialFunctions[pixel.emit](hitPixel,pixel)
+                            }
+                            if (pixel.mode == 1){
+                                if (pixel.emit == "ray"){
+                                    if (hitPixel.element == "ray"){
+                                        hitPixel.rColor = pixel.color
+                                        hitPixel.life = 10
+                                        hitPixel.color = pixel.color
+                                    }
+                                    else {break;}
+                                } else {break;}
+                            }
+                            if (pixel.mode == 2 && !special){
+                                deletePixel(hitPixel.x, hitPixel.y)
+                                createPixel(pixel.emit, j[0], j[1])
+                                pixelMap[j[0]][[j[1]]].temp = pixel.temp
+                                if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                                if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                            }
+                        } else {
+                            if (special){continue}
+                            if (isEmpty(j[0], j[1])){
+                                createPixel(pixel.emit, j[0], j[1])
+                                pixelMap[j[0]][[j[1]]].temp = pixel.temp
+                                if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                                if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                            } else {break;}
+                        }
+                    }
+                }
+            }
+        }
+    },
     insulate: true,
     updateOrder: 681392,
+    iConduct: true,
+    iUpdate: function(pixel, spreader){
+        let special = Object.keys(raySpecialFunctions).includes(pixel.emit)
+        let i = [spreader.x-pixel.x, spreader.y-pixel.y]
+        let jcoords = lineCoords(pixel.x-i[0],pixel.y-i[1],pixel.x-(Math.max(width, height)*i[0]),pixel.y-(Math.max(width, height)*i[1]),1)
+        for (let j of jcoords){
+            if (!isEmpty(j[0], j[1], true)){
+                let hitPixel = pixelMap[j[0]][j[1]]
+                if (special){
+                    raySpecialFunctions[pixel.emit](hitPixel,pixel)
+                }
+                if (pixel.mode ==  1){
+                    if (pixel.emit == "ray"){
+                        if (hitPixel.element == "ray"){
+                            hitPixel.rColor = pixel.color
+                            hitPixel.life = 10
+                            hitPixel.color = pixel.color
+                        }
+                    } else {return []}
+                }
+                if (pixel.mode == 2 && !special){
+                    deletePixel(hitPixel.x, hitPixel.y)
+                    createPixel(pixel.emit, j[0], j[1])
+                    pixelMap[j[0]][[j[1]]].temp = pixel.temp
+                    if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                    if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                }
+            } else {
+                if (special){continue}
+                if (isEmpty(j[0], j[1])){
+                    createPixel(pixel.emit, j[0], j[1])
+                    pixelMap[j[0]][[j[1]]].temp = pixel.temp
+                    if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                    if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                } else {return [];}
+            }
+        }
+        return []
+    }
 }
 elements.indestructible_battery = {
     color: elements.battery.color,
@@ -2121,6 +2243,7 @@ elements.ray = {
     behavior: behaviors.WALL,
     movable: true,
     category: "special",
+    updateOrder: elements.ray_emitter.updateOrder + 1,
     hoverStat: function(pixel){
         return (pixel.life || "unset").toString()
     },
@@ -2136,9 +2259,9 @@ elements.ray = {
         }
         pixel.life -= 1
         if (pixel.life < pixel.maxLife){
-            pixel.color = "rgba("+pixel.rgb[0]+","+pixel.rgb[1]+","+pixel.rgb[2]+")"
+            pixel.color = "rgb("+pixel.rgb[0]+","+pixel.rgb[1]+","+pixel.rgb[2]+")"
             pixel.alpha = (pixel.life/pixel.maxLife)
-        } else {pixel.color = "rgba("+pixel.rgb[0]+","+pixel.rgb[1]+","+pixel.rgb[2]+",1)"}
+        } else {pixel.color = "rgb("+pixel.rgb[0]+","+pixel.rgb[1]+","+pixel.rgb[2]+")"}
         // lightmap.js integration
         if (enabledMods.includes("mods/lightmap.js")){
             let x = Math.floor(pixel.x / lightmapScale);
@@ -2157,17 +2280,180 @@ elements.ray = {
         }
     }
 }
-var specificRayStart = 0
-var specificRayEnd = 20
-var specificRayAngle = 0
-var stopAtElement = "wall"
-var rayLife = 10
-var rainbowMode = "no"
 elements.specific_ray_emitter = {
     color: "#e73e63",
     behavior: behaviors.WALL,
     category: "machines",
     movable: false,
+    onSelect: async function(){
+        let ans1 = await _nousersthingsprompt("What should this ray emitter emit?", "ray")
+        ans1 = mostSimilarElement(ans1)
+        let ans2 = await _nousersthingslistprompt("What type of wall behavior should it have?", ["Stop at walls", "Overwrite walls", "Count walls", "Skip over walls"])
+        const translateans = {
+            "Stop at walls": 1,
+            "Overwrite walls": 2,
+            "Count walls": 3,
+            "Skip over walls": 4
+        }
+        ans2 = translateans[ans2]
+        let ans3 = await _nousersthingsprompt("How far should the start of the beam be from the emitter?", 1)
+        ans3 = parseFloat(ans3)
+        let ans4 = await _nousersthingsprompt("What should the length of the beam be, in pixels?")
+        currentElementProp = {emit:ans1,mode:ans2}
+        ans4 = parseInt(ans4)
+        let ans5 = await _nousersthingslistprompt("Angle?", ["Default behavior", "Custom number"])
+        if (ans5 == "Custom number"){
+            ans5 = parseFloat(await _nousersthingsprompt("What should the angle be?", 0))*(Math.PI/180)
+        } else ans5 = null
+        let ans6 = await _nousersthingslistprompt("Would you like the beam to terminate upon hitting a specific element?", ["Yes", "No"])
+        if (ans6 == "Yes"){
+            ans6 = mostSimilarElement(await _nousersthingsprompt("What element should it stop at?", "wall"))
+        } else {ans6 = null}
+        let ans7
+        if (ans1 == "ray"){
+            ans7 = parseInt(await _nousersthingsprompt("How long should the ray stay on screen, in ticks?", 10))
+        }
+        currentElementProp = {
+            emit: ans1,
+            mode: ans2,
+            rayStart: ans3,
+            length: ans4,
+            angle: ans5,
+            terminate: ans6,
+            rayLife: ans7
+        }
+    },
+    properties: {
+        lastUpdate: 0
+    },
+    iConduct: 1,
+    tick: function(pixel){
+        if (typeof pixel.rayElement != "undefined"){pixel.emit = pixel.rayElement; delete pixel.rayElement;}
+        if (typeof pixel.rayStoppedByWalls != "undefined"){pixel.mode = pixel.rayStoppedByWalls ? 1 : 3; delete pixel.rayStoppedByWalls}
+        if (typeof pixel.specificRayStart != "undefined"){pixel.rayStart = pixel.specificRayStart; delete pixel.specificRayStart}
+        if (typeof pixel.specificRayEnd != "undefined"){pixel.length = pixel.specificRayEnd; delete pixel.specificRayEnd}
+        if (typeof pixel.specificRayAngle != "undefined"){
+            if (pixel.specificRayAngle == "nah"){pixel.angle = null; delete pixel.specificRayAngle}
+            else {pixel.angle = pixel.specificRayAngle*(Math.PI/180); delete pixel.specificRayAngle}
+        }
+        if (typeof pixel.stopAtElement != "undefined"){pixel.terminate = pixel.stopAtElement; delete pixel.stopAtElement}
+        if (typeof pixel.rainbowMode != "undefined"){delete pixel.rainbowMode}
+        if (typeof pixel.emit == "undefined" || typeof pixel.mode == "undefined"){{changePixel(pixel, "flash"); logMessage("An emitter without valid properties was attempted to be placed."); return;}}
+        let special = Object.keys(raySpecialFunctions).includes(pixel.emit)
+        for (let i of squareCoords){
+            let x = pixel.x + i[0]
+            let y = pixel.y + i[1]
+            if (!isEmpty(x, y, true)){
+                let otherPixel = pixelMap[x][y]
+                if (otherPixel.charge){
+                    if (otherPixel.element == "insulated_wire"){
+                        if (Math.abs(i[0]+i[1]) != 1){continue;} // funny way to check for direct adjacency
+                    }
+                    if (pixel.angle !== null){i = [Math.cos(pixel.angle+Math.PI), -Math.sin(pixel.angle+Math.PI)]}
+                    let jcoords = lineCoords(
+                        Math.round(pixel.x-i[0]*pixel.rayStart),
+                        Math.round(pixel.y-i[1]*pixel.rayStart),
+                        Math.round((pixel.x-i[0]*pixel.rayStart)-(Math.max(width, height)*i[0])),
+                        Math.round((pixel.y-i[1]*pixel.rayStart)-(Math.max(width, height)*i[1])),
+                    1)
+                    console.log(jcoords.length)
+                    let quota = 0
+                    for (let j of jcoords){
+                        if (quota >= pixel.length){break}
+                        if (!isEmpty(j[0], j[1], true)){
+                            let hitPixel = pixelMap[j[0]][j[1]]
+                            if (pixel.terminate !== null){if (elements[hitPixel.element].id == elements[pixel.terminate].id){break;}}
+                            //console.log(hitPixel)
+                            if (special){
+                                raySpecialFunctions[pixel.emit](hitPixel,pixel)
+                            }
+                            if (pixel.mode == 1){
+                                if (pixel.emit == "ray"){
+                                    if (hitPixel.element == "ray"){
+                                        hitPixel.rColor = pixel.color
+                                        hitPixel.life = 10
+                                        hitPixel.color = pixel.color
+                                        quota++
+                                    }
+                                    else {break;}
+                                } else {break;}
+                            }
+                            if (pixel.mode == 2 && !special){
+                                deletePixel(hitPixel.x, hitPixel.y)
+                                createPixel(pixel.emit, j[0], j[1])
+                                pixelMap[j[0]][[j[1]]].temp = pixel.temp
+                                if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                                if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                                quota++
+                            }
+                            if (pixel.mode == 3){quota++}
+                        } else {
+                            if (special){continue}
+                            if (isEmpty(j[0], j[1])){
+                                createPixel(pixel.emit, j[0], j[1])
+                                pixelMap[j[0]][[j[1]]].temp = pixel.temp
+                                if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                                if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                                quota++
+                            } else {break;}
+                        }
+                    }
+                }
+            }
+        }
+    },
+    iUpdate: function(pixel, spreader){
+        let special = Object.keys(raySpecialFunctions).includes(pixel.emit)
+        let i = [spreader.x-pixel.x, spreader.y-pixel.y]
+        if (pixel.angle !== null){i = [Math.cos(pixel.angle+Math.PI), -Math.sin(pixel.angle+Math.PI)]}
+        let quota = 0
+        let jcoords = lineCoords(
+            Math.round(pixel.x-i[0]*pixel.rayStart),
+            Math.round(pixel.y-i[1]*pixel.rayStart),
+            Math.round((pixel.x-i[0]*pixel.rayStart)-(Math.max(width, height)*i[0])),
+            Math.round((pixel.y-i[1]*pixel.rayStart)-(Math.max(width, height)*i[1])),
+        1)
+        for (let j of jcoords){
+            if (quota >= pixel.length){break}
+            if (!isEmpty(j[0], j[1], true)){
+                let hitPixel = pixelMap[j[0]][j[1]]
+                if (pixel.terminate !== null){if (elements[hitPixel.element].id == elements[pixel.terminate].id){break;}}
+                //console.log(hitPixel)
+                if (special){
+                    raySpecialFunctions[pixel.emit](hitPixel,pixel)
+                }
+                if (pixel.mode == 1){
+                    if (pixel.emit == "ray"){
+                        if (hitPixel.element == "ray"){
+                            hitPixel.rColor = pixel.color
+                            hitPixel.life = 10
+                            hitPixel.color = pixel.color
+                            quota++
+                        }
+                        else {break;}
+                    } else {break;}
+                }
+                if (pixel.mode == 2 && !special){
+                    deletePixel(hitPixel.x, hitPixel.y)
+                    createPixel(pixel.emit, j[0], j[1])
+                    if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                    if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                    quota++
+                }
+                if (pixel.mode == 3){quota++}
+            } else {
+                if (special){continue}
+                if (isEmpty(j[0], j[1])){
+                    createPixel(pixel.emit, j[0], j[1])
+                    if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.emit)){pixelMap[j[0]][[j[1]]].color = pixel.color}
+                    if (pixel.emit == "ray"){pixelMap[j[0]][[j[1]]].color = pixel.color;pixelMap[j[0]][[j[1]]].rColor = pixel.color}
+                    quota++
+                } else {break;}
+            }
+        }
+        return []
+    },
+    /*
     onSelect: async function(pixel){
         var rayans = await _nousersthingsprompt("Please input the desired element of this ray emitter",(rayElement||undefined));
         if (!rayans) { return }
@@ -2276,7 +2562,7 @@ elements.specific_ray_emitter = {
                                 pixelMap[lx][ly].life = pixel.life
                                 pixelMap[lx][ly].maxLife = pixel.life
                             }
-                            if (["pointer", "flash", "explosion"].includes(pixel.rayElement)){
+                            if (["pointer", "flash", "explosion", "fire", "laser"].includes(pixel.rayElement)){
                                 pixelMap[lx][ly].color = pixel.color
                             }
                         } else if (!isEmpty(lx, ly, true)){
@@ -2294,6 +2580,7 @@ elements.specific_ray_emitter = {
             }
         }
     },
+    */
     insulate: true,
     updateOrder: -314
 }
@@ -2410,9 +2697,9 @@ elements.anchor = {
     color: "#020c20",
     category: "machines",
     behavior: behaviors.WALL,
-    desc: "Anchor; unpushable and unpullable by pistons.",
+    desc: "Anchor; can not be moved by anything.",
     onSelect: function(){
-        logMessage("Unpushable and unpullable by pistons.")
+        logMessage("Can not be moved by anything.")
     }
 }
 elements.piston_ray_emitter = {
@@ -2680,21 +2967,30 @@ elements.super_heat_conductor = {
 }
 runEveryTick(function() { // global heat conductor
     // run any code after pixels are simulated per tick
-    var heatpixels = currentPixels.filter(function(pixelToCheck) {
+    let heatpixels = currentPixels.filter(function(pixelToCheck) {
         if (pixelToCheck.element == "global_heat_conductor"){
             return true;
         }
     })
-    for (var i = 0; i < heatpixels.length; i++) {
-        var newPixel = heatpixels[i];
-        var randomPixel = heatpixels[Math.floor(Math.random()*heatpixels.length)];
-        var avg = (randomPixel.temp + newPixel.temp)/2;
-        randomPixel.temp = avg;
-        newPixel.temp = avg;
+    let totals = {}
+    for (let i = 0; i < heatpixels.length; i++) {
+        let newPixel = heatpixels[i];
+        if (typeof totals[newPixel.channel] == "undefined"){totals[newPixel.channel] = [0,0]}
+        totals[newPixel.channel][0] += 1
+        totals[newPixel.channel][1] += newPixel.temp
+    }
+    for (let i = 0; i < heatpixels.length; i++) {
+        let newPixel = heatpixels[i];
+        newPixel.temp = totals[newPixel.channel][1]/totals[newPixel.channel][0]
     }
 })
 elements.global_heat_conductor = {
     color: "#55251e",
+    name: "Heat Portal",
+    onSelect: async function(){
+        let ans = await _nousersthingsprompt("What will the channel of this heat portal be?", 0)
+        currentElementProp = {channel: ans}
+    },
     behavior: behaviors.WALL,
     category: "solids",
     density: 10000,
@@ -3342,12 +3638,12 @@ elements.e_void = {
         if (pixel.charge){
             for (let i = 0; i<adjacentCoords.length;i++){
                 let x = pixel.x+adjacentCoords[i][0]
-                let y = pixel.y+adjacentCoords[i][0]
+                let y = pixel.y+adjacentCoords[i][1]
                 if (!isEmpty(x, y, true)){
                     let otherPixel = pixelMap[x][y]
                     if (typeof pixel.filter != "undefined"){
                         if(isElementInProperty(otherPixel.element, pixel.filter)){deletePixel(otherPixel.x, otherPixel.y)}
-                    } else if (!elements.e_void.ignore.includes(otherPixel.element)){deletePixel(otherPixel.x, otherPixel.y)}
+                    } else if (!elements.e_void.ignore.includes(otherPixel.element) && otherPixel.element != pixel.element){deletePixel(otherPixel.x, otherPixel.y)}
                 }
             }
         }
@@ -3355,7 +3651,7 @@ elements.e_void = {
     name: "e-void"
 }
 elements.smart_anti_void = {
-    color: "#bdffed",
+    color: "#92c6b8",
     category: "special",
     movable: false,
     behavior: behaviors.WALL,
@@ -3378,7 +3674,7 @@ elements.smart_anti_void = {
     grain: 0
 }
 elements.smart_anti_e_void = {
-    color: "#fffebd",
+    color: "#bfbe7c",
     category: "machines",
     movable: false,
     behavior: behaviors.WALL,
@@ -3577,4 +3873,475 @@ elements.silica_gel = {
         seltzer: {elem2: [null, "carbon_dioxide"]},
         clay: {elem2: "clay_soil"}
     }
+}
+if (!eLists.UNMOVABLE){eLists.UNMOVABLE = [];}
+eLists.UNMOVABLE.push("false_vacuum", "anchor")
+let numerizedUnmovable = false
+runAfterReset(() => {
+    if (!numerizedUnmovable){
+        const newList = []
+        for (let _element in eLists.UNMOVABLE){
+            newList[elements[eLists.UNMOVABLE[_element]].id] = true
+        }
+        eLists.UNMOVABLE = newList
+        numerizedUnmovable = true
+    }
+})
+const oldTryMove = tryMove
+tryMove = function(...args){
+    let pixel = args[0]
+    if (eLists.UNMOVABLE[elements[pixel.element].id]){return false} else{
+        return oldTryMove.apply(undefined, args)
+    }
+}
+const iUpdateAll = function(pixel){
+    let updateList = [[pixel.x, pixel.y, pixel]];
+    while (updateList.length > 0 && updateList.length < 100000) { // arbitrary safeguard
+        //console.log(updateList)
+        const [x, y, spreaderPixel] = updateList.pop();
+        let otherPixel = pixelMap[x][y];
+        if (elements[otherPixel.element].conduct){
+            chargePixel(otherPixel)
+        }
+        if (elements[otherPixel.element].iConduct) {
+            updateList = updateList.concat(elements[otherPixel.element].iUpdate(otherPixel, spreaderPixel) || []);
+        }
+    }
+}
+const iCooldownTick = function(pixel, offTime){
+    if (pixel.cooldown > -30 && pixel.lastUpdate != pixelTicks){pixel.cooldown -= 1}
+    if (pixel.cooldown < offTime){pixel.iCharge = 0} else {pixel.iCharge = 1}
+    if (pixel.cooldown <= 0){
+        for (let i in adjacentCoords){
+            let x = pixel.x + adjacentCoords[i][0]
+            let y = pixel.y + adjacentCoords[i][1]
+            if (!isEmpty(x, y, true)){
+                let otherPixel = pixelMap[x][y]
+                if (otherPixel.charge){
+                    iUpdateAll(pixel)
+                    break;
+                }
+            }
+        }
+    }
+}
+const iUpdateCooldown = function(pixel, cooldown){
+    let returnCoords = []
+    pixel.iCharge = 1
+    pixel.cooldown = cooldown
+    pixel.lastUpdate = pixelTicks
+    for (let i of adjacentCoords){
+        let x = pixel.x + i[0]
+        let y = pixel.y + i[1]
+        if (!isEmpty(x, y, true)){
+            let spreadPixel = pixelMap[x][y]
+            if (elements[spreadPixel.element].iConduct && pixel.lastUpdate > spreadPixel.lastUpdate){
+                returnCoords.push([spreadPixel.x, spreadPixel.y, pixel])
+            }
+            if (elements[spreadPixel.element].conduct && !spreadPixel.chargeCD && !spreadPixel.charge){
+                chargePixel(spreadPixel)
+            }
+        }
+    }
+    return returnCoords
+}
+elements.instant_wire = {
+    color: "#8ec7a2",
+    behavior: behaviors.WALL,
+    category: "instant machines",
+    properties: {
+        iCharge: 0,
+        lastUpdate: 0,
+        cooldown: 0
+    },
+    iConduct: 1,
+    tick: function(pixel){
+        iCooldownTick(pixel, 4)
+    },
+    iUpdate: function(pixel, otherPixel){
+        return iUpdateCooldown(pixel, 9)
+    },
+    renderer: function(pixel, ctx){
+        let _rgb = getPixelColor(pixel.color);
+        let _hsv = RGBtoHSV(parseInt(_rgb[0]), parseInt(_rgb[1]), parseInt(_rgb[2]))
+        _hsv.v = _hsv.v*((Math.max(pixel.cooldown, 0)/9)*0.6+0.4)
+        let _rgb2 = HSVtoRGB(_hsv.h, _hsv.s, _hsv.v)
+        let _hex = RGBToHex([Math.floor(_rgb2.r), Math.floor(_rgb2.g), Math.floor(_rgb2.b)])
+        drawSquare(ctx, _hex, pixel.x, pixel.y)
+    },
+    updateOrder: 203847,
+    movable: false
+}
+elements.instant_wire_junction = {
+    color: "#00685a",
+    iConduct: 1,
+    behavior: behaviors.WALL,
+    category: "instant machines",
+    properties: {
+        lastUpdate: 0,
+        cooldown: 1,
+        dirUpdate: 0,
+        visitedDirs: [],
+        iCharge: 0
+    },
+    tick: (pixel) => {pixel.iCharge--},
+    iUpdate: function(pixel, otherPixel){
+        let returnCoords = []
+        if (pixel.dirUpdate !== pixelTicks){
+            pixel.visitedDirs = [];
+            pixel.dirUpdate = pixelTicks;
+        }
+        let dir = [otherPixel.x-pixel.x, otherPixel.y-pixel.y]
+        if (pixel.visitedDirs.includes(dir.join(","))){
+            return []
+        } else {pixel.visitedDirs.push(dir.join(","))}
+        pixel.iCharge = 10
+        if (!isEmpty(pixel.x-dir[0], pixel.y-dir[1], true)){
+            let spreadPixel = pixelMap[pixel.x-dir[0]][pixel.y-dir[1]]
+            if (elements[spreadPixel.element].iConduct && spreadPixel.lastUpdate < pixelTicks){
+                returnCoords.push([spreadPixel.x, spreadPixel.y, pixel])
+            }
+            if (elements[spreadPixel.element].conduct && !spreadPixel.chargeCD && !spreadPixel.charge){
+                chargePixel(spreadPixel)
+            }
+        }
+        return returnCoords
+    },
+    renderer: function(pixel, ctx){
+        let _rgb = getPixelColor(pixel.color);
+        let _hsv = RGBtoHSV(parseInt(_rgb[0]), parseInt(_rgb[1]), parseInt(_rgb[2]))
+        _hsv.v = _hsv.v*((Math.max(pixel.iCharge, 0)/10)*0.6+0.4)
+        let _rgb2 = HSVtoRGB(_hsv.h, _hsv.s, _hsv.v)
+        let _hex = RGBToHex([Math.floor(_rgb2.r), Math.floor(_rgb2.g), Math.floor(_rgb2.b)])
+        drawSquare(ctx, _hex, pixel.x, pixel.y)
+    },
+    movable: false
+}
+elements.iwifi_transmitter = {
+    color: "#85ec8e",
+    iConduct: 1,
+    name: "i-WiFi Transmitter",
+    behavior: behaviors.WALL,
+    category: "instant machines",
+    properties: {lastUpdate:0, cooldown: 0},
+    onSelect: async function(){
+        let ans = await _nousersthingsprompt("What should the channel of this transmitter be?", 0)
+        if (typeof ans != "undefined"){
+            currentElementProp = {channel:ans}
+        }
+    },
+    tick: function(pixel){
+        iCooldownTick(pixel, 0)
+    },
+    iUpdate: function(pixel, otherPixel){
+        let returnCoords = [].concat(iUpdateCooldown(pixel, 4)||[])
+        let wifipixels = currentPixels.filter(function(pixelToCheck) {
+            if (pixelToCheck.element == "iwifi_receiver" && pixelToCheck.channel === pixel.channel && pixelToCheck.lastUpdate < pixelTicks){
+                return true;
+            }
+        })
+        for (let i = 0; i < wifipixels.length; i++) {
+            let newPixel = wifipixels[i];
+            returnCoords.push([newPixel.x, newPixel.y, pixel])
+        }
+        return returnCoords
+    },
+    movable: false
+}
+elements.iwifi_receiver = {
+    color: "#b4db6a",
+    iConduct: 1,
+    name: "i-WiFi Receiver",
+    category: "instant machines",
+    behavior: behaviors.WALL,
+    properties: {lastUpdate:0, cooldown:0},
+    onSelect: async function(){
+        let ans = await _nousersthingsprompt("What should the channel of this transmitter be?", 0)
+        if (typeof ans != "undefined"){
+            currentElementProp = {channel:ans}
+        }
+    },
+    iUpdate: function(pixel, otherPixel){
+        let returnCoords = []
+        console.log("attempt")
+        if (!(otherPixel.element == "iwifi_transmitter" || (otherPixel.x == pixel.x && otherPixel.y == pixel.y))){console.log("fail");return []}
+        console.log("success")
+        pixel.iCharge = 1
+        pixel.lastUpdate = pixelTicks
+        for (let i of adjacentCoords){
+            let x = pixel.x + i[0]
+            let y = pixel.y + i[1]
+            if (!isEmpty(x, y, true)){
+                let spreadPixel = pixelMap[x][y]
+                if (elements[spreadPixel.element].iConduct && pixel.lastUpdate > spreadPixel.lastUpdate){
+                    returnCoords.push([spreadPixel.x, spreadPixel.y, pixel])
+                }
+                if (elements[spreadPixel.element].conduct && !spreadPixel.chargeCD && !spreadPixel.charge){
+                    chargePixel(spreadPixel)
+                }
+            }
+        }
+        return returnCoords
+    },
+    movable: false
+}
+elements.ilamp = {
+    color: "#ff0000",
+    iConduct: 1,
+    customColor: true,
+    name: "i-Lamp",
+    category: "instant machines",
+    behavior: behaviors.WALL,
+    properties: {lastUpdate: 0, cooldown: 0},
+    grain: 0,
+    tick: function(pixel){
+        iCooldownTick(pixel, -2)
+    },
+    iUpdate: function(pixel, otherPixel){
+        return iUpdateCooldown(pixel, 12)
+    },
+    renderer: function(pixel, ctx){
+        let _rgb = getPixelColor(pixel.color);
+        let _hsv = RGBtoHSV(parseInt(_rgb[0]), parseInt(_rgb[1]), parseInt(_rgb[2]))
+        _hsv.v *= (Math.min((((Math.max(pixel.cooldown+4, 0)))/12),1)*0.8+0.2)
+        let _rgb2 = HSVtoRGB(_hsv.h, _hsv.s, _hsv.v)
+        let _hex = RGBToHex([Math.floor(_rgb2.r), Math.floor(_rgb2.g), Math.floor(_rgb2.b)])
+        drawSquare(ctx, _hex, pixel.x, pixel.y)
+    },
+    movable: false
+}
+elements.iswitch = {
+    color: "#cd70e4",
+    iConduct: 1,
+    name: "i-Switch",
+    category: "instant machines",
+    onSelect: () => {logMessage("Only works for conducting straight across.")},
+    behavior: behaviors.WALL,
+    properties: {lastUpdate: 0, cooldown: 1, dir: [0, 0], iCharge:0},
+    tick: function(pixel){
+        if (pixel.iCharge === 1){
+            let x = pixel.x - pixel.dir[0]
+            let y = pixel.y - pixel.dir[1]
+            if (!isEmpty(x, y, true)){
+                let spreadPixel = pixelMap[x][y]
+                if (elements[spreadPixel.element].iConduct && spreadPixel.cooldown <= 0){
+                    iUpdateAll(spreadPixel)
+                }
+                if (elements[spreadPixel.element].conduct && !spreadPixel.chargeCD && !spreadPixel.charge){
+                    chargePixel(spreadPixel)
+                }
+            }
+        }
+    },
+    iUpdate: function(pixel, otherPixel){
+        if (pixel.dir[0] == 0 && pixel.dir[1] == 0){
+            pixel.dir = [otherPixel.x-pixel.x, otherPixel.y-pixel.y]
+        }
+        if (otherPixel.x-pixel.x == pixel.dir[0] && otherPixel.y-pixel.y == pixel.dir[1]){pixel.iCharge = pixel.iCharge == 1 ? 0 : 1} 
+        return []
+    },
+    movable: false
+}
+const oldShockTool = elements.shock.tool;
+elements.shock.tool = function(pixel){
+    oldShockTool(pixel);
+    if (elements[pixel.element].iConduct && pixel.cooldown <= 0){
+        iUpdateAll(pixel)
+    }
+}
+elements.heat_pipe = {
+    color: "#25117a",
+    behavior: behaviors.WALL,
+    category: "machines",
+    movable: false,
+    onSelect: () => {logMessage("Draw a pipe, wait for walls to appear, then erase the exit hole.");},
+    onShiftSelect: async () => {
+        let ans1 = await _nousersthingsprompt("How much heat should be absorbed at once?", 5)
+        ans1 = isNaN(parseFloat(ans1)) ? 5 : parseFloat(ans1)
+        let ans2 = await _nousersthingsprompt("At what temperature should it stop trying to absorb heat from the input?", -273.15)
+        ans2 = isNaN(parseFloat(ans2)) ? 5 : parseFloat(ans2)
+        let ans3 = await _nousersthingsprompt("Please type true or false for yes or no. Should equalizing mode be on?")
+        ans3 = (ans3=="true") ? true : false
+        currentElementProp = {packetSize: ans1, cutoff: ans2, mode: ans3}
+    },
+    insulate: true,
+    tick: function(pixel){if (!pixel.stage && pixelTicks-pixel.start > 60) {
+			for (var i = 0; i < squareCoords.length; i++) {
+				var coord = squareCoords[i];
+				var x = pixel.x+coord[0];
+				var y = pixel.y+coord[1];
+				if (!isEmpty(x,y,true) && elements[pixelMap[x][y].element].movable) {
+					deletePixel(x,y)
+				}
+				if (isEmpty(x,y)) {
+					createPixel("pipe_wall",x,y);
+                    pixelMap[x][y].color = pixelColorPick(pixelMap[x][y],"#270f47");
+				}
+			}
+			pixel.color = pixelColorPick(pixel,"#140725");
+			pixel.stage = 1;
+		}
+		else if (pixel.stage === 1 && pixelTicks-pixel.start > 70) { //uninitialized
+			for (var i = 0; i < adjacentCoords.length; i++) {
+				var coord = adjacentCoords[i];
+				var x = pixel.x+coord[0];
+				var y = pixel.y+coord[1];
+				if (isEmpty(x,y)) {
+					pixel.stage = 2; //blue
+                    pixel.mode = -1;
+					pixel.color = pixelColorPick(pixel,"#2b0ba0");
+					break;
+				}
+			}
+		}
+		else if (pixel.stage > 1 && pixelTicks % 3 === pixel.stage-2) { //initialized
+			for (var i = 0; i < squareCoords.length; i++) {
+				var coord = squareCoords[i];
+				var x = pixel.x+coord[0];
+				var y = pixel.y+coord[1];
+				if (!isEmpty(x,y,true) && pixelMap[x][y].element === "heat_pipe") {
+					var newPixel = pixelMap[x][y];
+					if (newPixel.stage === 1) {
+						var newColor;
+						switch (pixel.stage) {
+							case 2: newPixel.stage = 3; newColor = "#760ba0"; break; //green
+							case 3: newPixel.stage = 4; newColor = "#4c0ba0"; break; //red
+							case 4: newPixel.stage = 2; newColor = "#2b0ba0"; break; //blue
+						}
+						newPixel.color = pixelColorPick(newPixel,newColor);
+					}
+				}
+			}
+			var moved = false;
+			shuffleArray(squareCoordsShuffle);
+			for (var i = 0; i < squareCoordsShuffle.length; i++) {
+				var coord = squareCoordsShuffle[i];
+				var x = pixel.x+coord[0];
+				var y = pixel.y+coord[1];
+				if (!isEmpty(x,y,true)) {
+					var newPixel = pixelMap[x][y];
+					if (newPixel.element === "heat_pipe") {
+						var nextStage;
+						switch (pixel.stage) {
+							case 2: nextStage = 4; break; //green
+							case 3: nextStage = 2; break; //red
+							case 4: nextStage = 3; break; //blue
+						}
+						if (pixel.cont && !newPixel.cont && newPixel.stage === nextStage) { //transfer to adjacent pipe
+							newPixel.cont = pixel.cont;
+							pixel.cont = null;
+							moved = true;
+							break;
+						}
+					}
+					else if (!pixel.cont && !elements[newPixel.element].insulate) { //suck up pixel
+						pixel.cont = (newPixel.temp - Math.max(newPixel.temp-(typeof pixel.packetSize != "undefined" ? pixel.packetSize : 5), (typeof pixel.cutoff != "undefined" ? pixel.cutoff : currentSaveData.abszero)));
+                        if (!pixel.mode && pixel.cont < 0){pixel.cont = null; break;}
+                        if (pixel.mode < 0){pixel.cont = null; break;}
+                        if (Math.round(3*Math.abs(pixel.cont)) < 1){pixel.cont = null; break;}
+                        pixel.cont = Math.round(4*pixel.cont)/4
+						newPixel.temp -= pixel.cont
+						moved = true;
+						break;
+					}
+				}
+			}
+			if (pixel.cont && !moved) { // move to same stage if none other
+				for (var i = 0; i < squareCoordsShuffle.length; i++) {
+					var coord = squareCoordsShuffle[i];
+					var x = pixel.x+coord[0];
+					var y = pixel.y+coord[1];
+                    if (!isEmpty(x, y, true) && pixelMap[x][y].element == "heat_pipe" && !pixelMap[x][y].cont){
+                        pixelMap[x][y].cont = pixel.cont
+                        pixel.cont = null
+                        break;
+                    }
+					if (!isEmpty(x,y,true) && !elements[pixelMap[x][y].element].insulate) {
+						pixelMap[x][y].temp += pixel.cont
+						pixel.cont = null;
+						break;
+					}
+				}
+			}
+		}
+	},
+    renderer: function(pixel, ctx){
+        drawDefault(ctx,pixel);
+		if (viewInfo[view].colorEffects !== true) return;
+        if (!pixel.cont) return;
+        const d = new Date()
+        drawSquare(ctx, "#FF0000", pixel.x, pixel.y, undefined, 0.3 + 0.7*((Math.sin(d.getTime()*0.002)+1)/2))
+    }
+}
+elements.i_clockwise = {
+    color: "#ffd23d",
+    name: "i-Clockwise Rotator",
+    category: "instant machines",
+    behavior: behaviors.WALL,
+    properties: {
+        lastUpdate: 0,
+        dirUpdate: 0,
+        visitedDirs: []
+    },
+    iConduct: 1,
+    iUpdate: function(pixel, otherPixel){
+        let returnCoords = []
+        if (pixel.dirUpdate !== pixelTicks){
+            visitedDirs = [];
+            pixel.dirUpdate = pixelTicks;
+        }
+        let dir = [otherPixel.x-pixel.x, otherPixel.y-pixel.y]
+        if (visitedDirs.includes(dir.join(","))){
+            return []
+        } else {visitedDirs.push(dir.join(","))}
+        dir = [-(otherPixel.y-pixel.y), otherPixel.x-pixel.x]
+        visitedDirs.push(dir.join(","))
+        if (!isEmpty(pixel.x+dir[0], pixel.y+dir[1], true)){
+            let spreadPixel = pixelMap[pixel.x+dir[0]][pixel.y+dir[1]]
+            if (elements[spreadPixel.element].iConduct && spreadPixel.lastUpdate < pixelTicks){
+                returnCoords.push([spreadPixel.x, spreadPixel.y, pixel])
+            }
+            if (elements[spreadPixel.element].conduct && !spreadPixel.chargeCD && !spreadPixel.charge){
+                chargePixel(spreadPixel)
+            }
+        }
+        return returnCoords
+    },
+    movable: false
+}
+elements.i_counterclockwise = {
+    color: "#855be9",
+    name: "i-CounterClockwise Rotator",
+    category: "instant machines",
+    behavior: behaviors.WALL,
+    properties: {
+        lastUpdate: 0,
+        dirUpdate: 0,
+        visitedDirs: []
+    },
+    iConduct: 1,
+    iUpdate: function(pixel, otherPixel){
+        let returnCoords = []
+        if (pixel.dirUpdate !== pixelTicks){
+            visitedDirs = [];
+            pixel.dirUpdate = pixelTicks;
+        }
+        let dir = [otherPixel.x-pixel.x, otherPixel.y-pixel.y]
+        if (visitedDirs.includes(dir.join(","))){
+            return []
+        } else {visitedDirs.push(dir.join(","))}
+        dir = [otherPixel.y-pixel.y, -(otherPixel.x-pixel.x)]
+        visitedDirs.push(dir.join(","))
+        if (!isEmpty(pixel.x+dir[0], pixel.y+dir[1], true)){
+            let spreadPixel = pixelMap[pixel.x+dir[0]][pixel.y+dir[1]]
+            if (elements[spreadPixel.element].iConduct && spreadPixel.lastUpdate < pixelTicks){
+                returnCoords.push([spreadPixel.x, spreadPixel.y, pixel])
+            }
+            if (elements[spreadPixel.element].conduct && !spreadPixel.chargeCD && !spreadPixel.charge){
+                chargePixel(spreadPixel)
+            }
+        }
+        return returnCoords
+    },
+    movable: false
 }
