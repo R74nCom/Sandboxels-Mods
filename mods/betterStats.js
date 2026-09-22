@@ -19,7 +19,7 @@ function updateStatsNew() {
 	stats += "<span id='stat-pixels' class='stat"+ (currentPixels.length >= maxPixelCount ? " redText" : "") +"'>Pxls:" + currentPixels.length+"</span>";
 	stats += "<span id='stat-tps' class='stat'>" + tps+"tps</span>";
 	stats += "<span id='stat-realtps' class='stat'>" + realTps + "tps</span>";
-	stats += "<span id='stat-ticks' class='stat'>" + pixelTicks+"</span>";
+	if (settings.showticks) stats += "<span id='stat-ticks' class='stat'>" + pixelTicks+"</span>";
 	if ((typeof pixelMap).length === 9) { return; }
 	if (pixelMap[mousePos.x] !== undefined) {
 		var currentPixel = pixelMap[mousePos.x][mousePos.y];

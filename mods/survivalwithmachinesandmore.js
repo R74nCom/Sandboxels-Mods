@@ -1,13 +1,12 @@
 if (!settings.survival) {
     settings.survival = {
         "wall": 999,
-        "dirt": 9999,
+        "dirt": 999,
         "sapling": 1,
         "seeds": 5,
         "ice": 25,
-        "cloner": 5,
-        "goldcoin":1000,
-        "diamond":10000,
+        "cloner": 1,
+        "gold_coin": 100,
     }
 }
 settings.survival.cloner = 1;
@@ -78,12 +77,19 @@ runAfterAutogen(function(){
     for (var element in elements) {
         if (elements[element].category !== "tools") {
             elements[element].hidden = true;
-            elements[element].category = "inventory";
+            if (!settings.survival || Object.keys(settings.survival).length < 25) {
+                elements[element].category = "inventory";
+            }
         }
+        if (elements[element].onShiftSelect) delete elements[element].onShiftSelect;
     }
     for (var element in settings.survival) {
         if (!elements[element]) { continue; }
         if (elements[element].category === "tools") { continue; }
+        if (!elements[element].colorObject) {
+            elements[element].color = "#ffffff";
+            elements[element].colorObject = {"r": 255,"g": 255,"b": 255};
+        }
         createElementButton(element);
         document.getElementById("elementButton-"+element).innerHTML += "("+settings.survival[element]+")";
     }
@@ -117,7 +123,7 @@ elements.cloner.tick = function(pixel) {
         }
     }
 };
-elements.cloner.ignore = elements.cloner.ignore.concat(["gold","gold_coin","molten_gold","sun","supernova","diamond"]);
+elements.cloner.ignore = elements.cloner.ignore.concat(["gold","gold_coin","molten_gold","sun","supernova","diamond","h_bomb","nuke",]);
 elements.cloner.desc = "You can only clone one element at a time!"
 
 elements.smash.tool = function(pixel) {
@@ -154,7 +160,7 @@ elements.smash.tool = function(pixel) {
 
 elementWorth = {
     "gold_coin": 1,
-    "diamond": 10000000,
+    "diamond": 100,
     "ketchup": 15,
     "jelly": 10,
     "soda": 10,
@@ -183,7 +189,7 @@ elementWorth = {
     "vine": 0.1,
     "cactus": 0.1,
     "cloner": 0,
-    "wall": 100000,
+    "wall": 0,
     "fire": 0,
     "smoke": 0,
     "plasma": 0,
@@ -194,8 +200,12 @@ elementWorth = {
     "radiation": 0,
     "petal": -1,
     "cell": -1,
-    "cancer": 1000000000,
+    "cancer": -1,
     "foam": -1,
+    "pipe_wall":-1,
+    "heat_ray":-1,
+    "freeze_ray":-1,
+    "god_ray":-1,
 }
 elements.sell = {
     color: ["#fff0b5","#ffe680","#c48821","#986a1a","#eca832","#f0bb62"],
@@ -246,6 +256,66 @@ survivalShop = {
     "primordial_soup*5": 10000,
     "human*1": 50000,
     "sun*1": 500000,
+    "basalt*10":10,
+    "clay*10":100,
+    "heat_ray*1000":1,
+    "freeze_ray*1000":1,
+    "god_ray*100":100,
+    "fire*100":10,
+    "plasma*100":10,
+    "cold_fire*100":10,
+    "mixer*10":200,
+    "grinder*10":200,
+    "heater*10":100,
+    "cooler*10":100,
+    "light_bulb*1":1000,
+    "battery*1":1000,
+    "wire*1":1000,
+    "wall*100":1000,
+    "silver*5":1000,
+    "copper*10":1000,
+    "iron*10":500,
+    "charcoal*1":10,
+    "portal_in*1":1000,
+    "portal_out*1":1000,
+    "sensor*1":100,
+    "cloner*1":10000,
+    "sponge*1":100,
+    "lightning*10":100,
+    "burner*1":10000,
+    "filter*10":1000,
+    "pipe*10":100,
+    "torch*10":1000,
+    "pressure_plate*1":100,
+    "mercury*1":100,
+    "alcohol*10":100,
+    "hydrogen*10":200,
+    "oxygen*10":200,
+    "nitrogen*10":200,
+    "hail*10":200,
+    "uranium*1":10000,
+    "neutron*10":100,
+    "potassium*10":100,
+    "chlorine*10":200,
+    "thermite*10":1000,
+    "oil*10":100,
+    "lamp_oil*10":1000,
+    "plastic*10":1000,
+    "tungsten*100":10000,
+    "lead*100":10000,
+    "nickel*100":1000,
+    "zinc*100":1000,
+    "gold*100":1000,
+    "aluminum*100":1000,
+    "sulfur*100":1000,
+    "bomb*10":1000,
+    "h_bomb*1":100000,
+    "nuke*1":10000,
+    "warp*1":100,
+    "ball*10":100,
+    "group*1":1000,
+    "ungroup*1":1000,
+    "ruler*1":1000,
 }
 function survivalBuy(element) {
     var price = survivalShop[element];
@@ -418,8 +488,8 @@ runAfterLoad(function(){
                     return;
                 }
                 createPixel(currentElement,x,y);
-                if (elements[currentElement].customColor || elements[currentElement].singleColor) {
-                    pixelMap[x][y].color = pixelColorPick(currentElement,currentColor);
+                if (pixelMap[x][y] && currentElement === pixelMap[x][y].element && (elements[currentElement].customColor || elements[currentElement].singleColor)) {
+                    pixelMap[x][y].color = pixelColorPick(pixelMap[x][y],currentColorMap[currentElement]);
                 }
                 if (elements[currentElement].category !== "tools") { survivalRemove(currentElement,1); }
             }

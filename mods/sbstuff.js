@@ -331,7 +331,7 @@ elements.burnt_marshmallow = {
 elements.spaghetti = {
 	isFood: true,
 	tempHigh: 90,
-	stateHigh: "cooked_ramen",
+	stateHigh: "cooked_spaghetti",
 	color: "#fae34d",
 	behavior: behaviors.SUPPORT,
 	category: "food",

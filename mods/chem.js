@@ -54,12 +54,12 @@ function reactList(list1, list2, reaction) {
         }
         if (reaction.deleteReactions.ba) {
           for (let k = 0; k < val1.length; k++) {
-            deleteReactions.push([list1[j], val1[k]]);
+            deleteReactions.push([list2[j], val1[k]]);
           }
         }
         if (reaction.deleteReactions.bb) {
           for (let k = 0; k < val2.length; k++) {
-            deleteReactions.push([list1[j], val2[k]]);
+            deleteReactions.push([list2[j], val2[k]]);
           }
         }
       }
@@ -338,7 +338,7 @@ function toxic(name, chance, dirtyWater = false) {
     { react1: "bless", react2: name, elem1: "no_change", elem2: null, priority: 100 },
   );
   if (dirtyWater) {
-    chemjsReactions.push({ react1: name, react2: "chemical!water,ignore!dirty_water", elem1: null, elem2: "dirty_water", chance: chance, priority: 10 });
+    chemjsReactions.push({ react1: name, react2: "chemical!liquid_water,ignore!dirty_water", elem1: null, elem2: "dirty_water", chance: chance, priority: 10 });
   }
 }
 
@@ -487,7 +487,11 @@ elements.liquid_fluorine = {
 };
 
 chemjsChemicals.fluorine_ignore = {
-  elementNames: ["chemical!foof", "chemical!oxygen", "chemical!ozone", "chemical!chlorine", "chemical!hydrogen_fluoride", "chemical!fluorine", "chemical!acids", "fire", "smoke", "neutral_acid", "chemical!water", "acid_cloud", "steam", "gold", "hydrogen", "chemical!polytetrafluoroethylene", "molten_polytetrafluoroethylene", "foof_grass", "foof_grass_seed"],
+  elementNames: ["chemical!foof", "chemical!oxygen", "chemical!ozone", "chemical!chlorine", "chemical!hydrogen_fluoride", "chemical!fluorine", "chemical!acids", "fire", "smoke", "neutral_acid", "chemical!water", "acid_cloud", "steam", "chemical!gold", "chemical!platinum", "hydrogen", "chemical!polytetrafluoroethylene", "molten_polytetrafluoroethylene", "foof_grass", "foof_grass_seed", "chemical!fluoride"],
+};
+
+chemjsChemicals.neon = {
+  elementNames: ["neon", "liquid_neon", "neon_ice"], //when would you ever need this
 };
 
 chemjsChemicals.sodium = {
@@ -642,7 +646,7 @@ chemjsChemicals.titanium = {
   elem: {
     color: "#e3e5e6",
     category: "solids",
-    density: 4500,
+    density: 4502,
     state: "solid",
     behavior: behaviors.WALL,
     conduct: 0.5,
@@ -651,8 +655,52 @@ chemjsChemicals.titanium = {
   tempHigh: [1668],
 };
 
+chemjsChemicals.vanadium = {
+  elem: {
+    color: ["#957864", "#8e7d6e", "#bda692"],
+    category: "solids",
+    density: 6099,
+    state: "solid",
+    behavior: behaviors.WALL,
+    conduct: 0.4,
+    hardness: 0.4,
+  },
+  tempHigh: [1910],
+};
+
 chemjsChemicals.iron = {
+  elementNames: ["chemical!wrought_iron", "chemical!steel", "chemical!pig_iron"],
+};
+
+
+chemjsChemicals.wrought_iron = {
   elementNames: ["iron", "molten_iron"],
+};
+
+chemjsChemicals.steel = {
+  elementNames: ["steel", "molten_steel"],
+};
+
+chemjsChemicals.pig_iron = {
+  elem: {
+    color: "#c4c4c4",
+    category: "solids",
+    density: 7850,
+    state: "solid",
+    behavior: behaviors.POWDER,
+    conduct: 0.4,
+    hardness: 0.3,
+    hidden: true,
+  },
+  tempHigh: [1538],
+};
+
+chemjsChemicals.copper = {
+  elementNames: ["copper", "molten_copper"],
+};
+
+chemjsChemicals.gallium = {
+  elementNames: ["gallium", "molten_gallium", "gallium_gas"],
 };
 
 let bromineTick = function (pixel) {
@@ -689,6 +737,73 @@ elements.bromine_gas = {
   stateLow: "bromine",
   state: "gas",
   category: "gases",
+};
+
+let zirconiums = ["zirconium", "molten_zirconium"];
+
+let zirconiumTick = function (pixel) {
+  if (pixel.con) {
+    shuffleArray(squareCoordsShuffle);
+    for (var i = 0; i < squareCoordsShuffle.length; i++) {
+      var coord = squareCoordsShuffle[i];
+      var x = pixel.x + coord[0];
+      var y = pixel.y + coord[1];
+      if (!isEmpty(x, y, true) && zirconiums.includes(pixelMap[x][y].element) && !pixelMap[x][y].con) {
+        pixelMap[x][y].con = pixel.con;
+        pixel.con.x = x;
+        pixel.con.y = y;
+        delete pixel.con;
+        break;
+      }
+      else if (isEmpty(x, y)) {
+        delete pixel.con.del;
+        pixel.con.x = x;
+        pixel.con.y = y;
+        pixel.con.bx = coord[0];
+        pixel.con.by = coord[1];
+        pixelMap[x][y] = pixel.con;
+        currentPixels.push(pixel.con);
+        pixel.con = null;
+        break;
+      }
+    }
+  } else {
+    shuffleArray(squareCoordsShuffle);
+    for (var i = 0; i < squareCoordsShuffle.length; i++) {
+      var coord = squareCoordsShuffle[i];
+      var x = pixel.x + coord[0];
+      var y = pixel.y + coord[1];
+      if (!isEmpty(x, y, true) && pixelMap[x][y].element === "neutron") {
+        pixel.con = pixelMap[x][y];
+        deletePixel(x, y);
+        pixel.con.x = pixel.x;
+        pixel.con.y = pixel.y;
+        moved = true;
+        break;
+      }
+    }
+  }
+}
+
+chemjsChemicals.zirconium = {
+  elem: {
+    tick: zirconiumTick,
+    canContain: true,
+    color: ["#ccc59b", "#dbd3a4"],
+    behaviors: behaviors.WALL,
+    category: "solids",
+    density: 7290,
+    state: "solid",
+    behavior: behaviors.WALL,
+    conduct: 0.19,
+    hardness: 0.5,
+    movable: false,
+  },
+  tempHigh: [1855],
+};
+elements.molten_zirconium = {
+  tick: zirconiumTick,
+  canContain: true,
 };
 
 chemjsChemicals.silver = {
@@ -742,9 +857,15 @@ chemjsChemicals.indium = {
     conduct: 0.05,
     hardness: 0.05,
     superconductAt: -269.74,
+    movable: false,
   },
   tempHigh: [156.6],
 };
+
+chemjsChemicals.tin = {
+  elementNames: ["tin", "molten_tin"],
+};
+
 
 let iodineTick = function (pixel) {
   if (pixel.temp > 25 && Math.random() < 0.001) {
@@ -793,6 +914,60 @@ chemjsChemicals.tungsten = {
   elementNames: ["tungsten", "molten_tungsten"],
 };
 
+
+chemjsChemicals.platinum = {
+  elem: {
+    color: ["#eefdff","#e5fafc","#defdff", "#b6d6d8", "#92bcbf", "#77acb0"],
+    category: "solids",
+    density: 21500,
+    state: "solid",
+    behavior: behaviors.WALL,
+    conduct: 0.7,
+    hardness: 0.4,
+    breakInto: "platinum_coin"
+  },
+  elementNames: ["platinum_coin"],
+  tempHigh: [1768],
+  causticIgnore: true,
+};
+
+elements.platinum_coin = {
+  color: ["#e5eeff", "#dae2e9", "#91979b", "#777b7f", "#898c94", "#b8bdc8"],
+  behavior: behaviors.POWDER,
+  tempHigh: 1768,
+  stateHigh: "molten_platinum",
+  category: "powders",
+  state: "solid",
+  density: 21500,
+  conduct: 0.7,
+  hardness: 0.35,
+  reactions: {
+    "body": { elem1: null, chance: 0.05 },
+    "glue": { elem1: "platinum", elem2: null },
+  }
+};
+
+
+chemjsChemicals.platinum_black = {
+  elem: {
+    color: ["#1c1e1f", "#7c8182", "#131515", "#161919", "#2f3737", "#161f20"],
+    behavior: behaviors.POWDER,
+    category: "powders",
+    density: 21500,
+    state: "solid",
+    onChange: function (pixel) {
+      delete pixel.catalyzed;
+    }
+  },
+  tempHigh: [1768],
+  stateHigh: ["molten_platinum"],
+  categories: ["platinum"],
+};
+
+chemjsChemicals.gold = {
+  elementNames: ["gold", "molten_gold", "gold_coin"],
+};
+
 chemjsChemicals.mercury = {
   elementNames: ["solid_mercury", "mercury", "mercury_gas"],
 };
@@ -809,6 +984,10 @@ chemjsChemicals.thallium = {
   },
   tempHigh: [304],
   toxic: [0.2],
+};
+
+chemjsChemicals.lead = {
+  elementNames: ["lead", "molten_lead"],
 };
 
 chemjsChemicals.polonium = {
@@ -890,6 +1069,7 @@ chemjsChemicals.stable_astatine = {
     state: "solid",
     category: "powders",
     density: 8910,
+    hidden: true,
   },
   densityHigh: [null, 17.17],
   tempHigh: [301, 336],
@@ -1146,6 +1326,7 @@ chemjsChemicals.stable_protactinium = {
     density: 15700,
     hardness: 0.1,
     conduct: 0.235,
+    hidden: true
   },
   tempHigh: [1568],
 };
@@ -1360,7 +1541,7 @@ elements.molten_enriched_plutonium = {
 
 chemjsChemicals.pure_stable_plutonium = {
   elem: {
-    color: ["#5fc29f", "#5d9e7d", "#5b7d6b"],
+    color: [blendColors("#5fc29f", "#ff0000"), blendColors("#5d9e7d", "#00ff00"), blendColors("#5b7d6b", "#0000ff")],
     behavior: behaviors.WALL,
     category: "solids",
     hidden: true,
@@ -1401,7 +1582,7 @@ chemjsChemicals.stable_americium = {
     color: [blendColors("#42ebaf", "#ff0000"), blendColors("#59d998", "#00ff00"), blendColors("#d0dbd5", "#0000ff")],
     behavior: behaviors.WALL,
     state: "solid",
-    category: "powders",
+    category: "solids",
     density: 12000,
     hardness: 0.9,
     conduct: 0.2,
@@ -1435,7 +1616,7 @@ chemjsChemicals.stable_curium = {
     color: [blendColors("#fab1f1", "#ff0000"), blendColors("#d6c9d5", "#00ff00"), blendColors("#e0b1d6", "#0000ff")],
     behavior: behaviors.WALL,
     state: "solid",
-    category: "powders",
+    category: "solids",
     density: 13510,
     hardness: 0.9,
     conduct: 0.2,
@@ -1469,7 +1650,7 @@ chemjsChemicals.stable_berkelium = {
     color: [blendColors("#f2edfa", "#ff0000"), blendColors("#bdbccf", "#00ff00"), blendColors("#d7cae8", "#0000ff")],
     behavior: behaviors.WALL,
     state: "solid",
-    category: "powders",
+    category: "solids",
     density: 13250,
     hardness: 0.9,
     conduct: 0.2,
@@ -1503,7 +1684,7 @@ chemjsChemicals.stable_californium = {
     color: [blendColors("#dfd0f7", "#ff0000"), blendColors("#bcbade", "#00ff00"), blendColors("#b99be0", "#0000ff")],
     behavior: behaviors.WALL,
     state: "solid",
-    category: "powders",
+    category: "solids",
     density: 15100,
     hardness: 0.9,
     conduct: 0.2,
@@ -1537,7 +1718,7 @@ chemjsChemicals.stable_einsteinium = {
     color: [blendColors("#3aa6c2", "#ff0000"), blendColors("#b8edf1", "#00ff00"), blendColors("#83d9e4", "#0000ff")],
     behavior: behaviors.WALL,
     state: "solid",
-    category: "powders",
+    category: "solids",
     density: 8840,
     hardness: 0.9,
     conduct: 0.2,
@@ -1571,7 +1752,7 @@ chemjsChemicals.stable_fermium = {
     color: [blendColors("#c8a7fc", "#ff0000"), blendColors("#cecbf2", "#00ff00"), blendColors("#d5bff2", "#0000ff")],
     behavior: behaviors.WALL,
     state: "solid",
-    category: "powders",
+    category: "solids",
     density: 9710,
     hardness: 0.9,
     conduct: 0.2,
@@ -1641,8 +1822,8 @@ chemjsChemicals.stable_copernicium = {
 
 chemjsChemicals.nihonium = {
   elem: {
-    color: ["#c94a0a"],
-    /*spike viper reference*/ behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:transactinide_fallout%1|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "XX|M1|XX"],
+    color: ["#c94a0a"], //spike viper reference
+    behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:transactinide_fallout%1|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "XX|M1|XX"],
     state: "solid",
     category: "powders",
     density: 16000,
@@ -1686,7 +1867,7 @@ chemjsChemicals.stable_nihonium = {
 chemjsChemicals.flerovium = {
   elem: {
     color: ["#a8ffe2", "#7ddbcd", "#9dc2b1"],
-    behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "M2 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:copernicium%1|M2 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "M1|M1|M1"],
+    behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "M2 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:copernicium%1 AND CH:rad_pop%0.05|M2 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "M1|M1|M1"],
     state: "liquid",
     category: "liquids",
     density: 11400,
@@ -1707,7 +1888,7 @@ chemjsChemicals.flerovium = {
 };
 
 elements.solid_flerovium = {
-  behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:copernicium%1|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX"],
+  behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:copernicium%1 AND CH:rad_pop%0.05|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 50;
@@ -1716,7 +1897,7 @@ elements.solid_flerovium = {
 };
 
 elements.flerovium_gas = {
-  behavior: ["M2|M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|M2", "M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:copernicium%1|M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "M2|M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|M2"],
+  behavior: ["M2|M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|M2", "M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:copernicium%1 AND CH:rad_pop%0.05|M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "M2|M1 AND CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|M2"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 50;
@@ -1745,7 +1926,7 @@ chemjsChemicals.stable_flerovium = {
 chemjsChemicals.moscovium = {
   elem: {
     color: ["#8a3683", "#b0339b", "#d14fcd"],
-    behavior: ["XX|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|XX", "CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|CH:nihonium%1|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2", "XX|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|XX"],
+    behavior: ["XX|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|XX", "CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|CH:nihonium%1 AND CH:rad_pop%0.05|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2", "XX|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|XX"],
     state: "solid",
     category: "solids",
     density: 13500,
@@ -1762,7 +1943,7 @@ chemjsChemicals.moscovium = {
 };
 
 elements.molten_moscovium = {
-  behavior: ["XX|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|XX", "M2 AND CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|CH:nihonium%1|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2", "M1|M1|M1"],
+  behavior: ["XX|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|XX", "M2 AND CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2|CH:nihonium%1 AND CH:rad_pop%0.05|CR:neutron%2 AND CR:radiation%2 AND CR:alpha_particle%2 AND CR:rad_pop%2", "M1|M1|M1"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 100;
@@ -1787,7 +1968,7 @@ chemjsChemicals.stable_moscovium = {
 chemjsChemicals.livermorium = {
   elem: {
     color: ["#c9c26b", "#5ee04c", "#8bc253"],
-    behavior: ["XX|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|XX", "CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|CH:flerovium%1|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1", "XX|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|XX"],
+    behavior: ["XX|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|XX", "CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|CH:flerovium%1 AND CH:rad_pop%0.1|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1", "XX|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|XX"],
     state: "solid",
     category: "solids",
     density: 12900,
@@ -1804,7 +1985,7 @@ chemjsChemicals.livermorium = {
 };
 
 elements.molten_livermorium = {
-  behavior: ["XX|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|XX", "M2 AND CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|CH:flerovium%1|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1", "M1|M1|M1"],
+  behavior: ["XX|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|XX", "M2 AND CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1|CH:flerovium%1 AND CH:rad_pop%0.1|CR:neutron%10 AND CR:radiation%10 AND CR:alpha_particle%10 AND CR:rad_pop%10 AND CR:n_explosion%0.1", "M1|M1|M1"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 100;
@@ -1829,7 +2010,7 @@ chemjsChemicals.stable_livermorium = {
 chemjsChemicals.tennessine = {
   elem: {
     color: ["#4f4c42"],
-    behavior: ["XX|CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|XX", "CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|CH:moscovium%1|CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2", "M2|M1|M2"],
+    behavior: ["XX|CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|XX", "CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|CH:moscovium%1 AND CH:rad_pop%0.1|CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2", "M2|M1|M2"],
     state: "solid",
     category: "powders",
     density: 7200,
@@ -1846,7 +2027,7 @@ chemjsChemicals.tennessine = {
 };
 
 elements.molten_tennessine = {
-  behavior: ["XX|CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|XX", "M2 AND CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|CH:moscovium%1|M2 AND CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2", "M1|M1|M1"],
+  behavior: ["XX|CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|XX", "M2 AND CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2|CH:moscovium%1 AND CH:rad_pop%0.1|M2 AND CR:neutron%15 AND CR:radiation%15 AND CR:alpha_particle%15 AND CR:rad_pop%15 AND CR:n_explosion%0.2", "M1|M1|M1"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 100;
@@ -1872,7 +2053,7 @@ chemjsChemicals.stable_tennessine = {
 chemjsChemicals.oganesson = {
   elem: {
     color: ["#c4ccc6", "#9ea39f", "#8e9294"],
-    behavior: ["XX|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|XX", "CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|CH:livermorium%1|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1", "XX|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|XX"],
+    behavior: ["XX|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|XX", "CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|CH:livermorium%1 AND CH:n_explosion%0.05|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1", "XX|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|XX"],
     state: "solid",
     category: "solids",
     density: 7200,
@@ -1888,7 +2069,7 @@ chemjsChemicals.oganesson = {
   categories: ["radioactive"],
 };
 elements.molten_oganesson = {
-  behavior: ["XX|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|XX", "M2 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|CH:livermorium%1|M2 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1", "M1|M1|M1"],
+  behavior: ["XX|CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|XX", "M2 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|CH:livermorium%1 AND CH:n_explosion%0.05|M2 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1", "M1|M1|M1"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 100;
@@ -1898,7 +2079,7 @@ elements.molten_oganesson = {
 };
 
 elements.oganesson_gas = {
-  behavior: ["M2|M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|M2", "M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|CH:livermorium%1|M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1", "M2|M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|M2"],
+  behavior: ["M2|M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|M2", "M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|CH:livermorium%1 AND CH:n_explosion%0.05|M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1", "M2|M1 AND CR:neutron%20 AND CR:radiation%20 AND CR:alpha_particle%20 AND CR:rad_pop%20 AND CR:n_explosion%1|M2"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 100;
@@ -1937,7 +2118,7 @@ elements.stable_oganesson_gas = {
 chemjsChemicals.ununennium = {
   elem: {
     color: ["#c0eb9b", "#82e082", "#b8c29d"],
-    behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:tennessine%1|M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M1|M1|M1"],
+    behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:tennessine%1 AND CH:n_explosion%0.1|M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M1|M1|M1"],
     state: "liquid",
     category: "liquids",
     density: 3000,
@@ -1957,7 +2138,7 @@ chemjsChemicals.ununennium = {
 };
 
 elements.solid_ununennium = {
-  behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:tennessine%1|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M2|M1|M2"],
+  behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:tennessine%1 AND CH:n_explosion%0.1|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M2|M1|M2"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 150;
@@ -1966,7 +2147,7 @@ elements.solid_ununennium = {
 };
 
 elements.ununennium_gas = {
-  behavior: ["M2|M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|M2", "M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:tennessine%1|M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M2|M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|M2"],
+  behavior: ["M2|M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|M2", "M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:tennessine%1 AND CH:n_explosion%0.1|M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M2|M1 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|M2"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 150;
@@ -1997,7 +2178,7 @@ elements.solid_stable_ununennium = {
 chemjsChemicals.unbinilium = {
   elem: {
     color: ["#faf069", "#fcf0c7", "#edcd3e"],
-    behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:oganesson%1|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M2|M1|M2"],
+    behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:oganesson%1 AND CH:n_explosion%0.1|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M2|M1|M2"],
     state: "solid",
     category: "powders",
     density: 7000,
@@ -2014,7 +2195,7 @@ chemjsChemicals.unbinilium = {
 };
 
 elements.molten_unbinilium = {
-  behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:oganesson%1|M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M1|M1|M1"],
+  behavior: ["XX|CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|XX", "M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2|CH:oganesson%1 AND CH:n_explosion%0.1|M2 AND CR:neutron%25 AND CR:radiation%25 AND CR:alpha_particle%25 AND CR:rad_pop%25 AND CR:n_explosion%2", "M1|M1|M1"],
   hardness: 0.999,
   tick: function (pixel) {
     pixel.temp += 100;
@@ -2156,6 +2337,7 @@ elements.liquid_hydrogen_fluoride = {
   behavior: behaviors.LIQUID,
   category: "liquids",
   stain: 0.005,
+  color: "#797946"
 };
 
 let fluoroboricAcidTick = function (pixel) {
@@ -2221,7 +2403,7 @@ chemjsChemicals.nitric_acid = {
   tempLow: [-42],
   reactionProduct: { cationAcid: "hydrogen_ion", anionAcid: "nitrate" },
   categories: ["acids", "hydrogen_ion", "nitrate", "caustic"],
-  ignore: ["chemical!nitrate"],
+  ignore: ["chemical!nitrate", "chemical!tetrachloroaurate_iii", "chemical!hexachloroplatinate_iv"],
 };
 elements.nitric_acid_gas = {
   behavior: ["M1|DB%5 AND M1|M1", "DB%5 AND M1|XX|DB%5 AND M1", "DB%5 AND M1|DB%10 AND M1|DB%5 AND M1"],
@@ -2257,7 +2439,7 @@ chemjsChemicals.phosphoric_acid = {
     category: "liquids",
     state: "liquid",
     density: 1684,
-    viscosity: 26.7,
+    viscosity: 9.4,
   },
   tempHigh: [120, 1000],
   stateHigh: [null, ["fire"]],
@@ -2287,7 +2469,7 @@ chemjsChemicals.sulfuric_acid = {
   tempLow: [10],
   reactionProduct: { cationAcid: "hydrogen_ion", anionAcid: "sulfate" },
   categories: ["acids", "hydrogen_ion", "sulfate", "caustic"],
-  ignore: ["chemical!sulfate"],
+  ignore: ["chemical!sulfate","chemical!vanadium_pentoxide"],
 };
 elements.sulfuric_acid_gas = {
   behavior: ["M1|DB%5 AND M1|M1", "DB%5 AND M1|XX|DB%5 AND M1", "DB%5 AND M1|DB%10 AND M1|DB%5 AND M1"],
@@ -2305,6 +2487,7 @@ chemjsChemicals.hydrochloric_acid = {
   elementNames: ["acid", "acid_gas", "acid_ice"],
   reactionProduct: { cationAcid: "hydrogen_ion", anionAcid: "chloride" },
   categories: ["acids", "hydrogen_ion", "chloride", "caustic"],
+  ignore: ["chemical!tetrachloroaurate_iii", "chemical!hexachloroplatinate_iv"],
 };
 
 let perchloricAcidTick = function (pixel) {
@@ -2357,6 +2540,39 @@ elements.perchloric_acid_gas = {
   category: "gases",
   stain: 0.01,
   hardness: 0.4,
+};
+
+
+let aquaRegiaTick = function (pixel, chance) {
+  if (Math.random() < chance) {
+    if (Math.random() < 0.25) {
+      changePixel(pixel, "chlorine", false);
+    } else if (Math.random() < 0.5) {
+      changePixel(pixel, "nitric_oxide", false);
+    } else if (Math.random() < 0.75) {
+      changePixel(pixel, "nitrogen_dioxide", false);
+    } else {
+      changePixel(pixel, "dirty_water", false);
+    }
+    pixelTempCheck(pixel);
+  }
+};
+
+chemjsChemicals.aqua_regia = {
+  elem: {
+    color: ["#dd9032", "#eba55a", "#be7d1b"],
+    tick: (pixel) => aquaRegiaTick(pixel, 0.00005),
+    behavior: ["XX|DB%5|XX", "DB%5 AND M2|XX|DB%5 AND M2", "DB%5 AND M2|DB%10 AND M1|DB%5 AND M2"],
+    category: "liquids",
+    state: "liquid",
+    density: 1100,
+  },
+  tempHigh: [108],
+  stateHigh: [["acid_gas", "nitric_acid_gas"]],
+  tempLow: [-42],
+  reactionProduct: { cationAcid: "hydrogen_ion", anionAcid: "chloride" },
+  categories: ["acids", "hydrogen_ion", "chloride", "nitrate", "caustic"],
+  ignore: ["chemical!nitrate", "chemical!chloride", "chemical!tetrachloroaurate_iii", "chemical!hexachloroplatinate_iv"],
 };
 
 chemjsChemicals.hydrobromic_acid = {
@@ -2623,7 +2839,7 @@ chemjsChemicals.francium_hydroxide = {
     behavior: behaviors.CAUSTIC,
     category: "powders",
     state: "solid",
-    density: 5100 /*made up*/,
+    density: 5100, //made up
     hidden: true,
   },
   elemName: "francium_hydroxide_powder",
@@ -2665,7 +2881,7 @@ chemjsChemicals.ununennium_hydroxide = {
     behavior: behaviors.CAUSTIC,
     category: "powders",
     state: "solid",
-    density: 5100 /*made up*/,
+    density: 5100, //made up
     hidden: true,
   },
   elemName: "ununennium_hydroxide_powder",
@@ -2745,8 +2961,26 @@ chemjsChemicals.boric_acid = {
     fireColor: ["#34eb67", "#5ceb34"],
   },
   tempHigh: [170],
-  reactionProduct: { cationAcid: "hydrogen_ion", cationBase: "boron_ion", anionAcid: "borate", anionBase: "hydroxide" },
-  categories: ["insoluble", "boron_ion", "hydroxide", "borate", "hydrogen_ion", "amphoteric"],
+  elementNames: ["chemical!boric_acid_solution"],
+  reactionProduct: { cation: "hydrogen_ion", cationAcid: "hydrogen_ion", cationBase: "boron_ion", anion: "borate", anionAcid: "borate", anionBase: "hydroxide", salt_water: "boric_acid_solution" },
+  categories: ["boron_ion", "hydroxide", "borate", "hydrogen_ion", "amphoteric", "salt"],
+};
+chemjsChemicals.boric_acid_solution = {
+  elem: {
+    color: blendColors("#fbffeb", "#2167ff", 0.5),
+    behavior: behaviors.LIQUID,
+    category: "liquids",
+    state: "liquid",
+    density: 1010,
+    hidden: true,
+    conduct: 0.1,
+    stain: -0.66,
+  },
+  tempLow: [-2],
+  tempHigh: [102],
+  stateHigh: [["steam", "boric_acid"]],
+  reactionProduct: { salt: "boric_acid" },
+  categories: ["salt_water"],
 };
 elements.molten_boric_acid = {
   behavior: behaviors.LIQUID,
@@ -2759,9 +2993,12 @@ chemjsChemicals.ammonium_nitrate = {
     state: "solid",
     category: "powders",
     density: 1725,
+    burn: 100,
+    burnTime: 100,
+    burnInto: "explosion",
   },
   tempHigh: [169.6],
-  stateHigh: [["fire"]],
+  stateHigh: [["explosion"]],
   elementNames: ["chemical!ammonium_nitrate_solution"],
   reactionProduct: { salt_water: "ammonium_nitrate_solution", cation: "ammonium_ion", anion: "nitrate" },
   categories: ["salt", "ammonium_ion", "nitrate"],
@@ -2901,7 +3138,7 @@ chemjsChemicals.sodium_octahydrotriborate = {
     color: ["#ded3de", "#ebc7eb", "#fbedfb", "#e3cce3"],
     behavior: behaviors.POWDER,
     category: "powders",
-    density: 1070 /*wild guess*/,
+    density: 1070, //wild guess
     state: "solid",
     fireColor: ["#ffff00", "#34eb67", "#5ceb34"],
     burn: 5,
@@ -2919,7 +3156,7 @@ chemjsChemicals.sodium_dodecaborate = {
     color: "#f5aef5",
     behavior: behaviors.POWDER,
     category: "powders",
-    density: 1050 /*wild guess*/,
+    density: 1050, //wild guess
     state: "solid",
     fireColor: ["#ffff00", "#34eb67", "#5ceb34"],
     burn: 1,
@@ -2936,7 +3173,7 @@ chemjsChemicals.sodium_bromoheptahydrotriborate = {
     color: ["#ded9d3", "#ebd9c7", "#fbf4ed", "#e3d5cc"],
     behavior: behaviors.POWDER,
     category: "powders",
-    density: 1090 /*wild guess*/,
+    density: 1090, //wild guess
     state: "solid",
     fireColor: ["#ffff00", "#34eb67", "#5ceb34"],
     burn: 5,
@@ -3167,6 +3404,41 @@ chemjsChemicals.cryolite_solution = {
   },
   tempHigh: [950],
 };
+
+chemjsChemicals.sodium_nitrate = {
+  elem: {
+    color: "#e4d3cd",
+    behavior: behaviors.POWDER,
+    state: "solid",
+    category: "powders",
+    density: 2257,
+    hidden: true,
+  },
+  tempHigh: [308 ],
+  stateHigh: [["fire"]],
+  elementNames: ["chemical!sodium_nitrate_solution"],
+  reactionProduct: { salt_water: "sodium_nitrate_solution", cation: "sodium_ion", anion: "nitrate" },
+  categories: ["salt", "sodium_ion", "nitrate"],
+};
+
+chemjsChemicals.sodium_nitrate_solution = {
+  elem: {
+    color: blendColors("#e4d3cd", "#2167ff", 0.75),
+    behavior: behaviors.LIQUID,
+    category: "liquids",
+    state: "liquid",
+    density: 1010,
+    hidden: true,
+    conduct: 0.1,
+    stain: -0.66,
+  },
+  tempLow: [-2],
+  tempHigh: [102],
+  stateHigh: [["steam", "sodium_nitrate"]],
+  reactionProduct: { salt: "sodium_nitrate" },
+  categories: ["salt_water"],
+};
+
 
 chemjsChemicals.sodium_sulfate = {
   elem: {
@@ -3720,6 +3992,81 @@ chemjsChemicals.titanium_trichloride_solution = {
   categories: ["salt_water"],
 };
 
+chemjsChemicals.vanadinite = {
+  elem: {
+    color: ["#c82f13", "#de7519", "#ea410e"],
+    behavior: behaviors.WALL,
+    category: "land",
+    density: 6900,
+    state: "solid",
+  },
+  tempHigh: [1910],
+  categories: ["insoluble", "vanadate_v", "chloride", "lead_ii"],
+};
+
+
+chemjsChemicals.red_cake = {
+  elem: {
+    color: ["#d73117", "#e0642f", "#d1702e", "#f2602a", "#d44114", "#dc1f19"],
+    behavior: behaviors.POWDER,
+    category: "powders",
+    hidden: true,
+    state: "solid",
+    density: 2840,
+    toxic: [0.02],
+  },
+  tempHigh: [630],
+};
+
+chemjsChemicals.red_cake_solution = {
+  elem: {
+    color: ["#eda16f"],
+    behavior: ["XX|DB%5|XX", "DB%5 AND M2|XX|DB%5 AND M2", "DB%5 AND M2|DB%10 AND M1|DB%5 AND M2"],
+    category: "liquids",
+    state: "liquid",
+    density: 1850,
+    viscosity: 26.7,
+    hidden: true,
+  },
+  tempHigh: [337],
+  stateHigh: [["sulfuric_acid_gas", "red_cake"]],
+  tempLow: [10],
+  categories: ["acids", "caustic"],
+  ignore: ["chemical!sulfate", "red_cake", "vanadinite"],
+};
+
+chemjsChemicals.vanadium_pentoxide = {
+  elem: {
+    color: ["#d5b412"],
+    behavior: behaviors.POWDER,
+    category: "powders",
+    density: 3350,
+    state: "solid",
+    onChange: function (pixel) {
+      delete pixel.catalyzed;
+    }
+  },
+  toxic: [0.2],
+  tempHigh: [681],
+  categories: ["insoluble", "vanadium_v", "oxide"],
+};
+
+
+
+chemjsChemicals.hematite = {
+  elem: {
+    color: ["#e0472f", "#bf2a2a", "#913920"],
+    behavior: behaviors.POWDER,
+    category: "land",
+    density: 5250,
+    state: "solid",
+  },
+  tempHigh: [1539],
+  categories: ["insoluble", "iron_iii", "oxide"],
+};
+elements.molten_slag.ignore.push("hematite");
+delete elements.molten_iron.reactions["carbon_dioxide"];
+
 chemjsChemicals.iron_dichloride = {
   elem: {
     color: ["#207d09", "#b51259"],
@@ -3751,10 +4098,38 @@ chemjsChemicals.iron_dichloride_solution = {
   categories: ["salt_water"],
 };
 
+
+chemjsChemicals.chalcopyrite = {
+  elem: {
+    color: ["#e8d7cb", "#cdc0af", "#726153", "#8f775e", "#bfaea0",],
+    behavior: behaviors.WALL,
+    category: "land",
+    density: 4200,
+    state: "solid",
+  },
+  tempHigh: [950],
+  categories: ["insoluble", "copper_i", "iron_iii", "sulfide"],
+};
+elements.molten_slag.ignore.push("chalcopyrite");
+
 chemjsChemicals.copper_sulfate = {
   elementNames: ["copper_sulfate", "molten_copper_sulfate"],
   categories: ["insoluble", "copper_ii", "sulfate"],
 };
+
+
+chemjsChemicals.sphalerite = {
+  elem: {
+    color: ["#7a7a7a", "#5c5c5c", "#3d3d3d", "#363636", "#e0e0e0",],
+    behavior: behaviors.WALL,
+    category: "land",
+    density: 4090,
+    state: "solid",
+  },
+  tempHigh: [1850],
+  categories: ["insoluble", "iron_ii", "zinc_ion", "sulfide"],
+};
+elements.molten_slag.ignore.push("sphalerite");
 
 chemjsChemicals.sodium_bromide = {
   elem: {
@@ -3985,6 +4360,137 @@ chemjsChemicals.indium_chloride_solution = {
   categories: ["salt_water"],
 };
 
+
+
+chemjsChemicals.cassiterite = {
+  elem: {
+    color: ["#5e5b5b", "#705a4d", "#826f6f", "#333030", "#e3d8d1"],
+    behavior: behaviors.WALL,
+    category: "land",
+    density: 6950,
+    state: "solid",
+  },
+  tempHigh: [1630],
+  categories: ["insoluble", "tin_iv", "oxide"],
+};
+elements.molten_slag.ignore.push("cassiterite");
+
+
+chemjsChemicals.chloroauric_acid = {
+  elem: {
+    color: "#f0e40e",
+    behavior: behaviors.CAUSTIC,
+    state: "solid",
+    category: "powders",
+    density: 3900,
+    hidden: true,
+  },
+  tempHigh: [254],
+  stateHigh: [["acid_gas", "chlorine", "gold", "gold"]],
+  elementNames: ["chemical!chloroauric_acid_solution"],
+  reactionProduct: { salt_water: "chloroauric_acid_solution", cation: "hydrogen_ion", anion: "tetrachloroaurate_iii" },
+  categories: ["salt", "hydrogen_ion", "tetrachloroaurate_iii", "caustic"],
+  toxic: [0.1],
+};
+
+chemjsChemicals.chloroauric_acid_solution = {
+  elem: {
+    color: "#dce374",
+    behavior: ["XX|DB%5|XX", "DB%5 AND M2|XX|DB%5 AND M2", "DB%5 AND M2|DB%10 AND M1|DB%5 AND M2"],
+    category: "liquids",
+    state: "liquid",
+    density: 1033,
+    hidden: true,
+    conduct: 0.2,
+    stain: -0.66,
+  },
+  tempLow: [-2],
+  tempHigh: [102],
+  stateHigh: [["steam", "chloroauric_acid"]],
+  reactionProduct: { salt: "chloroauric_acid" },
+  categories: ["salt_water"],
+};
+
+
+
+chemjsChemicals.platinum_dioxide = {
+  elem: {
+    color: "#332012",
+    behavior: behaviors.POWDER,
+    category: "powders",
+    density: 10200,
+    state: "solid",
+    hidden: true,
+  },
+  elemName: "adams_catalyst",
+  tempHigh: [450],
+  categories: ["insoluble", "platinum_iv", "oxide"],
+};
+
+
+chemjsChemicals.chloroplatinic_acid = {
+  elem: {
+    color: "#f2b422",
+    behavior: behaviors.CAUSTIC,
+    state: "solid",
+    category: "powders",
+    density: 2431,
+    hidden: true,
+  },
+  tempHigh: [60, 240],
+  stateHigh: [null, ["acid_gas", "chlorine", "platinum", "platinum"]],
+  elementNames: ["chemical!chloroplatinic_acid_solution"],
+  reactionProduct: { salt_water: "chloroplatinic_acid_solution", cation: "hydrogen_ion", anion: "hexachloroplatinate_iv", cationAcid: "hydrogen_ion", anionAcid: "hexachloroplatinate_iv" },
+  categories: ["salt", "hydrogen_ion", "hexachloroplatinate_iv", "caustic", "acids"],
+  toxic: [0.1],
+};
+
+chemjsChemicals.chloroplatinic_acid_solution = {
+  elem: {
+    color: "#c9bf65",
+    behavior: ["XX|DB%5|XX", "DB%5 AND M2|XX|DB%5 AND M2", "DB%5 AND M2|DB%10 AND M1|DB%5 AND M2"],
+    category: "liquids",
+    state: "liquid",
+    density: 1032,
+    hidden: true,
+    conduct: 0.2,
+    stain: -0.66,
+  },
+  tempLow: [-2],
+  tempHigh: [102],
+  stateHigh: [["steam", "chloroplatinic_acid"]],
+  reactionProduct: { salt: "chloroplatinic_acid" },
+};
+
+chemjsChemicals.potassium_hexachloroplatinate = {
+  elem: {
+    color: "#f7bd1e",
+    behavior: behaviors.POWDER,
+    category: "powders",
+    density: 3344,
+    state: "solid",
+  },
+  tempHigh: [2852],
+  stateHigh: [["potassium_salt","chlorine","platinum","platinum"]],
+  categories: ["insoluble", "hexachloroplatinate_iv", "potassium_ion"],
+  toxic: [0.1],
+};
+
+
+chemjsChemicals.galena = {
+  elem: {
+    color: ["#e6e6e6", "#bdbdbd", "#7a7a7a", "#737373"],
+    behavior: behaviors.WALL,
+    category: "land",
+    density: 7600,
+    state: "solid",
+  },
+  tempHigh: [1113],
+  categories: ["insoluble", "lead_ii", "sulfide"],
+};
+elements.molten_slag.ignore.push("galena");
+
+
 chemjsChemicals.thallium_oxide = {
   elem: {
     color: "#2b2b2a",
@@ -4133,8 +4639,8 @@ chemjsChemicals.francium_nihonide = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 13700,
-    /*made up*/ hidden: true,
+    density: 13700, //made up
+    hidden: true,
   },
   tempHigh: [1920], //made up
   categories: ["francium_ion", "nihonide", "insoluble"],
@@ -4384,7 +4890,6 @@ chemjsChemicals.yellowcake_solution = {
   },
   tempHigh: [337],
   stateHigh: [["sulfuric_acid_gas", "yellowcake"]],
-  densityHigh: [1.26],
   tempLow: [10],
   categories: ["acids", "caustic"],
   ignore: ["chemical!sulfate", "radiation", "yellowcake", "uraninite"],
@@ -5010,8 +5515,8 @@ chemjsChemicals.copernicium_dioxide = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 13120,
-    /*made up*/ hidden: true,
+    density: 13120, //made up
+    hidden: true,
   },
   tempHigh: [300], //made up
   stateHigh: [["stable_copernicium_gas", "oxygen"]],
@@ -5025,8 +5530,8 @@ chemjsChemicals.copernicium_tetrafluoride = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 12110,
-    /*made up*/ hidden: true,
+    density: 12110, //made up
+    hidden: true,
   },
   tempHigh: [502], //made up
   stateHigh: [["stable_copernicium_gas", "fluorine"]],
@@ -5040,8 +5545,8 @@ chemjsChemicals.copernicium_sulfide = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 13200,
-    /*made up*/ hidden: true,
+    density: 13200, //made up
+    hidden: true,
   },
   tempHigh: [421], //made up
   stateHigh: [["stable_copernicium_gas", "molten_sulfur"]],
@@ -5055,8 +5560,8 @@ chemjsChemicals.nihonium_oxide = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 12370,
-    /*made up*/ hidden: true,
+    density: 12370, //made up
+    hidden: true,
   },
   tempHigh: [567], //made up
   categories: ["nihonium_i", "oxide", "insoluble"],
@@ -5069,8 +5574,8 @@ chemjsChemicals.nihonium_hydroxide = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 10220,
-    /*made up*/ hidden: true,
+    density: 10220, //made up
+    hidden: true,
   },
   tempHigh: [292], //made up
   stateHigh: [["nihonium_oxide", "steam"]],
@@ -5152,8 +5657,8 @@ chemjsChemicals.flerovium_sulfide = {
     behavior: behaviors.WALL,
     category: "solids",
     state: "solid",
-    density: 14700,
-    /*made up*/ hidden: true,
+    density: 14700, //made up
+    hidden: true,
     burnInto: ["flerovium_oxide", "sulfur_dioxide"],
     burn: 1,
   },
@@ -5167,8 +5672,8 @@ chemjsChemicals.flerovium_oxide = {
     behavior: behaviors.STURDYPOWDER,
     category: "powders",
     state: "solid",
-    density: 14320,
-    /*made up*/ hidden: true,
+    density: 14320, //made up
+    hidden: true,
   },
   tempHigh: [1120], //made up
   categories: ["flerovium_ii", "oxide", "insoluble"],
@@ -5213,8 +5718,8 @@ chemjsChemicals.moscovium_fluoride = {
     behavior: behaviors.STURDYPOWDER,
     category: "powders",
     state: "solid",
-    density: 6220,
-    /*made up*/ hidden: true,
+    density: 6220, //made up
+    hidden: true,
   },
   tempHigh: [720], //made up
   categories: ["moscovium_iii", "fluoride", "insoluble"],
@@ -5227,8 +5732,8 @@ chemjsChemicals.livermorium_oxide = {
     behavior: behaviors.STURDYPOWDER,
     category: "powders",
     state: "solid",
-    density: 12430,
-    /*made up*/ hidden: true,
+    density: 12430,//made up
+    hidden: true,
   },
   tempHigh: [730], //made up
   categories: ["livermorium_ii", "oxide", "insoluble"],
@@ -5273,8 +5778,8 @@ chemjsChemicals.ununennium_trifluoride = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 7200,
-    /*made up*/ hidden: true,
+    density: 7200, //made up
+    hidden: true,
   },
   tempHigh: [140], //made up
   categories: ["ununennium_iii", "fluoride", "insoluble"],
@@ -5287,8 +5792,8 @@ chemjsChemicals.ununennium_pentafluoride = {
     behavior: behaviors.CAUSTIC,
     category: "powders",
     state: "solid",
-    density: 7250,
-    /*made up*/ hidden: true,
+    density: 7250, //made up
+    hidden: true,
   },
   tempHigh: [70], //made up
   stateHigh: [["ununennium_trifluoride", "fluorine"]],
@@ -5363,8 +5868,8 @@ chemjsChemicals.unbinilium_tetrafluoride = {
     behavior: behaviors.POWDER,
     category: "powders",
     state: "solid",
-    density: 7500,
-    /*made up*/ hidden: true,
+    density: 7500, //made up
+    hidden: true,
   },
   tempHigh: [210], //made up
   categories: ["unbinilium_iv", "fluoride", "insoluble"],
@@ -5377,8 +5882,8 @@ chemjsChemicals.unbinilium_hexafluoride = {
     behavior: behaviors.CAUSTIC,
     category: "powders",
     state: "solid",
-    density: 7700,
-    /*made up*/ hidden: true,
+    density: 7700, //made up
+    hidden: true,
   },
   tempHigh: [70], //made up
   stateHigh: [["unbinilium_tetrafluoride", "fluorine"]],
@@ -5411,7 +5916,7 @@ chemjsChemicals.liquid_salt_water = {
 };
 
 chemjsChemicals.fertilizer = {
-  elementNames: ["chemical!ammonium_nitrate", "chemical!potassium_nitrate", "chemical!potassium_sulfate"],
+  elementNames: ["chemical!ammonium_nitrate", "chemical!sodium_nitrate", "chemical!potassium_nitrate", "chemical!potassium_sulfate"],
 };
 
 //ions
@@ -5537,11 +6042,30 @@ chemjsChemicals.titanium_iv = {
   elementNames: [],
 };
 
+chemjsChemicals.vanadium_v = {
+  elementNames: [],
+};
+chemjsChemicals.vanadate_v = {
+  elementNames: [],
+};
+
 chemjsChemicals.iron_ii = {
   elementNames: [],
 };
 
+chemjsChemicals.iron_iii = {
+  elementNames: [],
+};
+
+chemjsChemicals.copper_i = {
+  elementNames: [],
+};
+
 chemjsChemicals.copper_ii = {
+  elementNames: [],
+};
+
+chemjsChemicals.zinc_ion = {
   elementNames: [],
 };
 
@@ -5557,11 +6081,31 @@ chemjsChemicals.indium_iii = {
   elementNames: [],
 };
 
+chemjsChemicals.tin_iv = {
+  elementNames: [],
+};
+
 chemjsChemicals.iodide = {
   elementNames: [],
 };
 
+chemjsChemicals.tetrachloroaurate_iii = {
+  elementNames: [],
+};
+
+chemjsChemicals.platinum_iv = {
+  elementNames: [],
+};
+
+chemjsChemicals.hexachloroplatinate_iv = {
+  elementNames: [],
+};
+
 chemjsChemicals.thallium_i = {
+  elementNames: [],
+};
+
+chemjsChemicals.lead_ii = {
   elementNames: [],
 };
 
@@ -5826,7 +6370,7 @@ chemjsChemicals.boron_trichloride = {
 };
 
 chemjsChemicals.water = {
-  elementNames: ["water", "chemical!salt_water", "sugar_water", "dirty_water", "neutral_acid", "seltzer", "pool_water", "primordial_soup", "disinfectant"],
+  elementNames: ["water", "steam", "chemical!salt_water", "sugar_water", "dirty_water", "neutral_acid", "seltzer", "pool_water", "primordial_soup", "disinfectant"],
 };
 
 chemjsChemicals.liquid_water = {
@@ -5835,6 +6379,22 @@ chemjsChemicals.liquid_water = {
 
 chemjsChemicals.pure_water = {
   elementNames: ["water", "ice", "rime", "snow", "slush", "packed_snow", "steam"],
+};
+
+chemjsChemicals.carbon_monoxide = {
+  elem: {
+    color: "#45454c",
+    behavior: behaviors.GAS,
+    state: "gas",
+    category: "gases",
+    density: 1.45,
+    burn: 0.1,
+    burnTime: 100,
+    burnInto: ["carbon_dioxide"],
+  },
+  tempLow: [-191.5, -205],
+  toxic: [0.1],
+  densityLow: [789],
 };
 
 chemjsChemicals.carbon_dioxide = {
@@ -5866,10 +6426,16 @@ chemjsChemicals.nitrogen_dioxide = {
     state: "gas",
     density: 3.4,
   },
-  tempLow: [21.15, -9.3],
+  tempLow: [19, -9.3],
   toxic: [0.2],
   densityLow: [1447],
   causticIgnore: true,
+};
+
+elements.liquid_nitrogen_dioxide = {
+  tempHigh: 21.15,
+  stateHigh: "nitrogen_dioxide",
+  color: "#4b2500",
 };
 
 let foofTick = function (pixel, chance) {
@@ -5962,7 +6528,7 @@ chemjsChemicals.hydrogen_sulfide = {
 
 chemjsChemicals.sulfur_dioxide = {
   elem: {
-    color: "#FFF700",
+    color: "#fff700",
     behavior: behaviors.GAS,
     category: "gases",
     state: "gas",
@@ -5973,6 +6539,64 @@ chemjsChemicals.sulfur_dioxide = {
   toxic: [0.1],
   causticIgnore: true,
 };
+
+
+let sulfurTrioxideTick = function (pixel) {
+  let change = false;
+  for (let i = -1; i <= 1; i++) {
+    for (let j = -1; j <= 1; j++) {
+      if (!(i === 0 && j === 0) && !isEmpty(pixel.x + i, pixel.y + j, true) && !elements[pixel.element].ignore.includes(pixelMap[pixel.x + i][pixel.y + j].element)) {
+        if (!elements[pixelMap[pixel.x + i][pixel.y + j].element].hardness || Math.random() > elements[pixelMap[pixel.x + i][pixel.y + j].element].hardness) {
+          changePixel(pixelMap[pixel.x + i][pixel.y + j], "fire");
+          change = true;
+        }
+      }
+    }
+  }
+  if (change && Math.random() < 0.1) {
+    changePixel(pixel, "fire");
+  }
+};
+
+chemjsChemicals.sulfur_trioxide = {
+  elem: {
+    color: "#c88e4b",
+    behavior: behaviors.LIQUID,
+    tick: sulfurTrioxideTick,
+    category: "liquids",
+    state: "liquid",
+    density: 1920,
+  },
+  tempLow: [16.9],
+  tempHigh: [45],
+  densityHigh: [3.33],
+  causticIgnore: true,
+  categories: ["caustic"],
+  ignore: ["chemical!phosphorus_pentoxide","chemical!phosphoric_acid","chemical!vanadium_pentoxide"],
+};;
+elements.sulfur_trioxide_gas = {
+  tick: sulfurTrioxideTick,
+  category: "gases",
+};
+
+chemjsChemicals.oleum = {
+  elem: {
+    color: ["#ea9e08", "#f6d44c", "#a97f0b"],
+    behavior: behaviors.LIQUID,
+    tick: sulfurTrioxideTick,
+    category: "liquids",
+    state: "liquid",
+    density: 1940,
+    viscosity: 26.7,
+  },
+  tempHigh: [337],
+  stateHigh: [["sulfuric_acid_gas", "sulfur_trioxide_gas"]],
+  tempLow: [14],
+  reactionProduct: { cationAcid: "hydrogen_ion", anionAcid: "sulfate" },
+  categories: ["acids", "hydrogen_ion", "sulfate", "caustic"],
+  ignore: ["chemical!sulfate","chemical!vanadium_pentoxide"],
+};
+
 
 chemjsChemicals.sulfur_hexafluoride = {
   elem: {
@@ -6038,6 +6662,114 @@ chemjsChemicals.polonium_hydride = {
   tempHigh: [36.1],
   densityHigh: [8.29],
   categories: ["insoluble", "polonide", "hydrogen_ion"],
+};
+
+//alloys
+let galinstanCoords = rectCoords(-5, -5, 5, 5);
+let galinstanTick = function (pixel) {
+  if (!pixel.realGalinstan) {
+    if (pixel.temp < pixel.galinstanTemp) {
+      deletePixel(pixel.x, pixel.y);
+    }
+  } else {
+    if (isNaN(pixel.galinstanTemp)) {
+      pixel.galinstanTemp = Math.random() * 100 - 20;
+    }
+    if (pixel.temp >= pixel.galinstanTemp + 100) {
+      let galinstan = releaseElement(pixel, "galinstan");
+      if (galinstan) {
+        pixel.galinstanTemp += 100;
+        galinstan.galinstanTemp = pixel.galinstanTemp;
+        galinstan.realGalinstan = false;
+        galinstan.temp = pixel.temp;
+      }
+    }
+    if (pixel.temp < pixel.galinstanTemp) {
+      pixel.galinstanTemp -= 100;
+    }
+    shuffleArray(squareCoordsShuffle);
+    for (let i = 0; i < squareCoordsShuffle.length; i++) {
+      var coord = squareCoordsShuffle[i];
+      var x = pixel.x + coord[0];
+      var y = pixel.y + coord[1];
+      if (!isEmpty(x, y, true) && pixelMap[x][y].element === "galinstan" && !pixelMap[x][y].realGalinstan) {
+        temp = pixel.galinstanTemp;
+        pixel.galinstanTemp = pixelMap[x][y].galinstanTemp;
+        pixelMap[x][y].galinstanTemp = temp;
+        pixel.realGalinstan = false;
+        pixelMap[x][y].realGalinstan = true;
+        break;
+      }
+    }
+  }
+};
+
+chemjsChemicals.incomplete_galinstan = {
+  elem: {
+    color: ["#98989e"],
+    category: "liquids",
+    density: 6200,
+    state: "liquid",
+    behavior: behaviors.LIQUID,
+    conduct: 0.4,
+    properties: {
+      hasTin: false,
+      hasIndium: false,
+    },
+    onChange: function (pixel) {
+      delete pixel.hasTin;
+      delete pixel.hasIndium;
+    },
+    stain: 0.05,
+    hidden: true,
+  },
+  tempHigh: [1500],
+  stateHigh: [["gallium_gas"]],
+  tempLow: [15],
+  stateLow: [["gallium"]],
+};
+
+
+chemjsChemicals.galinstan = {
+  elem: {
+    color: ["#87878c"],
+    category: "liquids",
+    density: 6440,
+    state: "liquid",
+    behavior: behaviors.LIQUID,
+    conduct: 0.4,
+    tick: galinstanTick,
+    properties: {
+      realGalinstan: true,
+      galinstanTemp: NaN,
+    },
+    onChange: function (pixel) {
+      if (!pixel.realGalinstan) {
+        deletePixel(pixel.x, pixel.y);
+      }
+      delete pixel.realGalinstan;
+      delete pixel.galinstanTemp;
+    },
+    stain: 0.05
+  },
+  tempHigh: [1300],
+  stateHigh: [["tin", "gallium", "gallium", "gallium", "indium"]],
+  tempLow: [-19],
+  stateLow: ["solid_galinstan"],
+};
+
+chemjsChemicals.ferrovanadium = {
+  elem: {
+    color: ["#e0dfad", "#f1f1c7", "#ccc4ae"],
+    category: "solids",
+    density: 6600,
+    state: "solid",
+    behavior: behaviors.WALL,
+    conduct: 0.4,
+    hardness: 0.8,
+    hidden: true,
+  },
+  tempHigh: [1480],
 };
 
 //organic chemistry
@@ -6125,6 +6857,7 @@ chemjsChemicals.polyethylene = {
     category: "solids",
     state: "solid",
     density: 1450,
+    movable: false,
   },
   tempHigh: [125],
   causticIgnore: true,
@@ -6168,6 +6901,7 @@ chemjsChemicals.polytetrafluoroethylene = {
     category: "solids",
     state: "solid",
     density: 1450,
+    movable: false,
   },
   tempHigh: [327],
   causticIgnore: true,
@@ -6206,7 +6940,7 @@ chemjsChemicals.chloroethane = {
   stateHigh: [["fire"]],
 };
 
-chemjsChemicals.diethylaluminium_chloride = {
+chemjsChemicals.diethylaluminum_chloride = {
   elem: {
     color: "#7faf7f",
     behavior: behaviors.LIQUID,
@@ -6316,7 +7050,7 @@ chemjsChemicals.oganesson_tetratennesside = {
 
 //whuh
 elements.acid_cloud.behavior = ["XX|XX|XX", "XX|CH:generic_acid%0.05|M1%2.5 AND BO", "XX|XX|XX"];
-elements.acid_cloud.behavior = ["XX|XX|XX", "XX|CH:generic_acid%0.05|M1%2.5 AND BO", "XX|XX|XX"];
+elements.acid_cloud.breakInto = "generic_acid";
 
 elements.base_cloud = {
   color: "#78636a",
@@ -6331,6 +7065,7 @@ elements.base_cloud = {
   burn: 15,
   burnTime: 5,
   state: "gas",
+	breakInto: "base",
   density: 0.7,
   ignoreAir: true,
 };
@@ -6514,7 +7249,7 @@ elements.alpha_particle = {
 
 elements.transactinide_fallout = {
   color: ["#5ab891", "#00ff5e", "#a7ff4a", "#a2f752"],
-  behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:fallout%1 AND CH:radium%0.1 AND CH:francium%0.1 AND CH:fermium%0.01 AND CH:einsteinium%0.01 AND CH:californium%0.01 AND CH:berkelium%0.01 AND CH:curium%0.01 AND CH:americium%0.01 AND CH:plutonium%0.01 AND CH:neptunium%0.01 AND CH:uranium%0.01 AND CH:protactinium%0.01 AND CH:thorium%0.01 AND CH:actinium%0.01|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "M2|M1|M2"],
+  behavior: ["XX|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|XX", "CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1|CH:rad_pop%0.5 AND CH:radium%0.1 AND CH:francium%0.1 AND CH:fermium%0.2 AND CH:einsteinium%0.2 AND CH:californium%0.1 AND CH:berkelium%0.1 AND CH:curium%0.1 AND CH:americium%0.1 AND CH:plutonium%0.1 AND CH:neptunium%0.1 AND CH:uranium%0.1 AND CH:protactinium%0.1 AND CH:thorium%0.1 AND CH:actinium%0.1|CR:neutron%1 AND CR:radiation%1 AND CR:alpha_particle%1 AND CR:rad_pop%1", "M2|M1|M2"],
   category: "energy",
   hidden: true,
   state: "solid",
@@ -6944,7 +7679,7 @@ chemjsReactions = [
   { react1: "chemical!acid_liquids", react2: "potassium", elem1: "explosion", elem2: "no_change", priority: 50 },
   { react1: "chemical!acid_liquids", react2: "meat", elem1: "no_change", elem2: "rotten_meat", elem1: null, chance: 0.5, priority: 50 },
   { react1: "chemical!acids,restrictchemical!caustic", react2: "chemical!liquid_water,ignore!dirty_water,ignore!neutral_acid", elem1: null, elem2: "dirty_water", priority: 10 },
-  { react1: "chemical!nitric_acid,chemical!sulfuric_acid,chemical!hydroiodic_acid,chemical!hydroastatic_acid,chemical!fluoroboric_acid", react2: "chemical!liquid_water,ignore!dirty_water,ignore!neutral_acid", elem1: "no_change", elem2: "dirty_water", priority: 11 },
+  { react1: "chemical!nitric_acid,chemical!sulfuric_acid,chemical!aqua_regia,chemical!hydroiodic_acid,chemical!hydroastatic_acid,chemical!fluoroboric_acid", react2: "chemical!liquid_water,ignore!dirty_water,ignore!neutral_acid", elem1: "no_change", elem2: "dirty_water", priority: 11 },
 
   { react1: "chemical!acid_gases", react2: "chemical!acid_gases", elem1: null, elem2: "acid_cloud", props: { chance: 0.3, y: [0, 12], setting: "clouds" }, priority: 50 },
   { react1: "chemical!acid_gases", react2: "rain_cloud", elem1: null, elem2: "acid_cloud", props: { chance: 0.4, y: [0, 12], setting: "clouds" }, priority: 50 },
@@ -7091,6 +7826,7 @@ chemjsReactions = [
   { react1: "chemical!acids,restrictchemical!hydrogen_ion", react2: "chemical!bases,chemical!amphoteric,restrictchemical!hydroxide", elem1: "chemical!liquid_salt_water,chemical!solid_insoluble,react1restrict!anionAcid,react2restrict!cationBase,one!", elem2: null, deleteReactions: { aa: true }, priority: 20 },
   { react1: "chemical!hydrochloric_acid,chemical!sulfuric_acid", react2: "chemical!bases,chemical!amphoteric,restrictchemical!hydroxide", elem1: "chemical!liquid_salt_water,chemical!solid_insoluble,react1restrict!anionAcid,react2restrict!cationBase,one!", elem2: null, deleteReactions: { aa: true }, props: { temp1: 50, temp2: 50 }, priority: 21 },
   { react1: "chemical!hydrogen_fluoride", react2: "chemical!bases,chemical!amphoteric,restrictchemical!hydroxide", elem1: "chemical!liquid_salt_water,chemical!solid_insoluble,react1restrict!anionAcid,react2restrict!cationBase,one!", elem2: "fire", deleteReactions: { aa: true }, priority: 21 },
+  { react1: "chemical!aqua_regia", react2: "chemical!bases,chemical!amphoteric,restrictchemical!hydroxide", elem1: "chemical!liquid_salt_water,chemical!solid_insoluble,react1restrict!anionAcid,react2restrict!cationBase,one!", elem2: "nitrogen_dioxide", deleteReactions: { aa: true }, priority: 21 },
   { react1: "chemical!acids,chemical!amphoteric,restrictchemical!hydrogen_ion", react2: "chemical!bases,restrictchemical!hydride", elem1: "chemical!liquid_salt_water,chemical!solid_insoluble,react1restrict!anionAcid,react2restrict!cationBase,one!", elem2: "hydrogen", deleteReactions: { aa: true }, priority: 20 },
   { react1: "chemical!acids,chemical!amphoteric,restrictchemical!hydrogen_ion", react2: "chemical!bases,restrictchemical!methoxide", elem1: "chemical!liquid_salt_water,chemical!solid_insoluble,react1restrict!anionAcid,react2restrict!cationBase,one!", elem2: "methanol", deleteReactions: { aa: true }, priority: 20 },
 
@@ -7151,6 +7887,13 @@ chemjsReactions = [
   { react1: "chemical!sodium_borohydride", react2: "chemical!boron_trifluoride", elem1: "sodium_octahydrotriborate", elem2: ["sodium_fluoride", "hydrogen"], props: { temp1: 20, temp2: 20 }, priority: 100 },
   { react1: "chemical!hydrobromic_acid", react2: "chemical!sodium_octahydrotriborate", elem1: "sodium_bromoheptahydrotriborate", elem2: "hydrogen", props: { temp1: 20, temp2: 20 }, priority: 100 },
 
+  { react1: "chemical!boron_trifluoride", react2: "chemical!hydrogen", elem1: "boron", elem2: "hydrogen_fluoride", priority: 10 },
+  { react1: "chemical!boron_trichloride", react2: "chemical!hydrogen", elem1: "boron", elem2: "acid", priority: 10 },
+  
+  { react1: "neutron", react2: "chemical!boron", elem1: null, elem2: "no_change", props: { chance: 0.5 }, priority: 100 },
+  { react1: "neutron", react2: "chemical!boric_acid", elem1: null, elem2: "no_change", props: { chance: 0.5 }, priority: 100 },
+
+
   //C
   { react1: "methanol", react2: "plant", elem1: null, elem2: "dead_plant", props: { chance: 0.05 }, priority: 100 },
   { react1: "methanol", react2: "cell", elem1: "no_change", elem2: [null, "dna"], props: { chance: 0.075 }, priority: 100 },
@@ -7167,19 +7910,26 @@ chemjsReactions = [
   { react1: "methanol", react2: "paper", elem1: "no_change", elem2: "cellulose", priority: 100 },
   { react1: "methanol", react2: "primordial_soup", elem1: "no_change", elem2: "water", priority: 100 },
 
-  { react1: "chemical!carbon_dioxide", react2: "chemical!hydrogen", elem1: "steam", elem2: "methanol", props: { chance: 0.1, tempMin: 300 }, priority: 100 },
+  { react1: "chemical!carbon_dioxide", react2: "chemical!hydrogen", elem1: "steam", elem2: "methane", props: { chance: 0.1, tempMin: 300 }, priority: 100 },
+  { react1: "chemical!carbon_monoxide", react2: "chemical!hydrogen", elem1: "methanol", elem2: null, props: { chance: 0.1, tempMin: 300 }, priority: 100 },
 
+  { react1: "chemical!carbon", react2: "chemical!carbon_dioxide", elem1: "carbon_monoxide", elem2: "carbon_monoxide", props: { chance: 0.05, tempMin: 800 }, priority: 100 },
+  { react1: "chemical!methane", react2: "chemical!pure_water", elem1: "carbon_monoxide", elem2: "hydrogen", props: { chance: 0.05, tempMin: 800 }, priority: 100 },
+  { react1: "chemical!carbon_monoxide", react2: "chemical!oxygen", elem1: "carbon_dioxide", elem2: "fire", props: { tempMin: 500 }, priority: 100 },
+
+  { react1: "chemical!carbon_monoxide", react2: "blood", elem1: null, elem2: "infection", priority: 100 },
+    
   { react1: "chemical!ethane", react2: "chemical!pure_water", elem1: "hydrogen", elem2: "ethylene", props: { chance: 0.01, tempMin: 300 }, priority: 100 },
 
   { react1: "chemical!titanium_trichloride", react2: "chemical!ethylene", elem1: "no_change", elem2: "polyethylene", props: { chance: 0.1 }, priority: 100 },
-  { react1: "chemical!diethylaluminium_chloride", react2: "chemical!ethylene", elem1: "no_change", elem2: "polyethylene", props: { chance: 0.1 }, priority: 100 },
+  { react1: "chemical!diethylaluminum_chloride", react2: "chemical!ethylene", elem1: "no_change", elem2: "polyethylene", props: { chance: 0.1 }, priority: 100 },
 
   //N
   { react1: "chemical!nitric_oxide", react2: "steam", elem1: "smog", elem2: null, props: { chance: 0.01 }, priority: 100 },
   { react1: "chemical!nitric_oxide", react2: "oxygen", elem1: "nitrogen_dioxide", elem2: null, priority: 100 },
 
   { react1: "chemical!nitrogen_dioxide", react2: "steam", elem1: "smog", elem2: null, props: { chance: 0.01 }, priority: 100 },
-  { react1: "chemical!nitrogen_dioxide", react2: "chemical!liquid_water,ignorechemical!nitrate", elem1: "nitric_oxide", elem2: "nitric_acid", priority: 10 },
+  { react1: "chemical!nitrogen_dioxide", react2: "chemical!liquid_water,ignorechemical!nitrate,ignorechemical!tetrachloroaurate_iii,ignorechemical!hexachloroplatinate_iv", elem1: "nitric_oxide", elem2: "nitric_acid", priority: 10 },
   { react1: "chemical!sulfuric_acid", react2: "chemical!potassium_nitrate", elem1: "potassium_sulfate", elem2: "nitric_acid", props: { temp1: 50, temp2: 50 }, priority: 100 },
 
   { react1: "chemical!ammonia", react2: "oxygen", elem1: "nitric_oxide", elem2: "steam", props: { chance: 0.01 }, priority: 100 },
@@ -7250,7 +8000,7 @@ chemjsReactions = [
   { react1: "chemical!magnesium_fluoride", react2: "chemical!sulfuric_acid", elem1: "hydrogen_fluoride", elem2: "epsom_salt", priority: 100 },
 
   //Al
-  { react1: "chemical!chloroethane", react2: "chemical!aluminum", elem1: "diethylaluminium_chloride", elem2: null, props: { chance: 0.1 }, priority: 100 },
+  { react1: "chemical!chloroethane", react2: "chemical!aluminum", elem1: "diethylaluminum_chloride", elem2: null, props: { chance: 0.1 }, priority: 100 },
 
   { react1: "chemical!sodium_aluminate_solution", react2: "chemical!carbon_dioxide", elem1: "aluminum_hydroxide", elem2: "sodium_carbonate_solution", priority: 100 },
   { react1: "chemical!aluminum_oxide", react2: "chemical!cryolite_mixture", elem1: "molten_cryolite_solution", elem2: "molten_cryolite_solution", props: { tempMin: 950 }, priority: 100 },
@@ -7303,6 +8053,9 @@ chemjsReactions = [
   { react1: "chemical!phosphorus_pentoxide", react2: "jelly", elem1: "no_change", elem2: "dust", priority: 100 },
   { react1: "chemical!phosphorus_pentoxide", react2: "yolk", elem1: "no_change", elem2: "dust", priority: 100 },
   { react1: "chemical!phosphorus_pentoxide", react2: "chemical!liquid_water", elem1: ["phosphorus_pentoxide", "phosphorus_pentoxide", "phosphorus_pentoxide", "phosphorus_pentoxide", "phosphoric_acid"], elem2: null, priority: 100 },
+  
+  { react1: "chemical!phosphorus_pentoxide", react2: "chemical!sulfuric_acid", elem1: ["phosphorus_pentoxide", "phosphorus_pentoxide", "phosphorus_pentoxide", "phosphorus_pentoxide", "phosphoric_acid"], elem2: "oleum", priority: 100 },
+  { react1: "chemical!phosphorus_pentoxide", react2: "chemical!oleum", elem1: ["phosphorus_pentoxide", "phosphorus_pentoxide", "phosphorus_pentoxide", "phosphorus_pentoxide", "phosphoric_acid"], elem2: "sulfur_trioxide", priority: 100 },
 
   { react1: "chemical!phosphoric_acid", react2: "chemical!soda", elem1: ["soda", null], elem2: "soda", priority: 100 },
   { react1: "chemical!phosphoric_acid", react2: "chemical!calcium_hydroxide", elem1: "neutral_acid", elem2: "tricalcium_phosphate", priority: 100 },
@@ -7322,9 +8075,8 @@ chemjsReactions = [
   { react1: "chemical!hydrogen_sulfide", react2: "chemical!liquid_water,ignore!dirty_water,ignore!iron_dichloride_solution", elem1: null, elem2: "dirty_water", priority: 10 },
   { react1: "chemical!hydrogen_sulfide", react2: "chemical!sodium_bicarbonate", elem1: null, elem2: "no_change", priority: 100 },
 
-  { react1: "chemical!sulfur_dioxide", react2: "steam", elem1: null, elem2: ["sulfuric_acid_gas", null, null, null, null], priority: 100 },
-  { react1: "chemical!sulfur_dioxide", react2: "chemical!liquid_water,ignore_chemical!sulfate", elem1: null, elem2: ["sulfuric_acid_gas", "dirty_water", "dirty_water", "dirty_water", "dirty_water"], priority: 10 },
-  { react1: "chemical!sulfur_dioxide", react2: "chemical!acid_gases", elem1: null, elem2: ["sulfuric_acid_gas", null, null, null, null], priority: 50 },
+  { react1: "chemical!sulfur_dioxide", react2: "chemical!nitrogen_dioxide", elem1: ["sulfuric_acid_gas", null, null], elem2: ["nitrogen_dioxide", "nitrogen_dioxide", null], props: { tempMin: 337, chance: 0.1, }, priority: 100 },
+  { react1: "chemical!sulfur_dioxide", react2: "chemical!liquid_water,ignore_chemical!sulfate", elem1: null, elem2: "dirty_water", priority: 10 },
 
   { react1: "chemical!sulfur_dioxide", react2: "rain_cloud", elem1: null, elem2: "acid_cloud", props: { chance: 0.4, y: [0, 12], setting: "clouds" }, priority: 100 },
   { react1: "chemical!sulfur_dioxide", react2: "cloud", elem1: null, elem2: "acid_cloud", props: { chance: 0.4, y: [0, 12], setting: "clouds" }, priority: 100 },
@@ -7333,6 +8085,33 @@ chemjsReactions = [
   { react1: "chemical!sulfur_dioxide", react2: "pyrocumulus", elem1: null, elem2: "acid_cloud", props: { chance: 0.4, y: [0, 12], setting: "clouds" }, priority: 100 },
   { react1: "chemical!sulfur_dioxide", react2: "fire_cloud", elem1: null, elem2: "acid_cloud", props: { chance: 0.4, y: [0, 12], setting: "clouds" }, priority: 100 },
   { react1: "chemical!sulfur_dioxide", react2: "thunder_cloud", elem1: null, elem2: "acid_cloud", props: { chance: 0.4, y: [0, 12], setting: "clouds" }, priority: 100 },
+
+  {
+    react1: "chemical!platinum_black,chemical!vanadium_pentoxide", react2: "chemical!sulfur_dioxide", elem1: "no_change", elem2: "no_change", props: {
+      func: function (pixel1, pixel2) {
+        if (pixel1.catalyzed) {
+          pixel1.catalyzed = false;
+          changePixel(pixel2, "sulfur_trioxide");
+        }
+      }
+    }, priority: 100
+  },
+  
+  {
+    react1: "chemical!platinum_black,chemical!vanadium_pentoxide", react2: "chemical!oxygen", elem1: "no_change", elem2: "no_change", props: {
+      func: function (pixel1, pixel2) {
+        if (!pixel1.catalyzed) {
+          pixel1.catalyzed = true;
+          deletePixel(pixel2.x, pixel2.y);
+        }
+      }, tempMin: 450,
+    }, priority: 100
+  },
+
+  { react1: "chemical!sulfur_trioxide", react2: "chemical!water", elem1: "sulfuric_acid_gas", elem2: "sulfuric_acid_gas", props: { temp1: 50, temp2: 50, }, priority: 100 },
+  { react1: "chemical!sulfur_trioxide", react2: "chemical!sulfuric_acid", elem1: "oleum", elem2: "oleum", props: { temp1: 10, temp2: 10, tempMax: 337, }, priority: 100 },
+  { react1: "chemical!oleum", react2: "chemical!water", elem1: "sulfuric_acid_gas", elem2: "sulfuric_acid_gas", props: { temp1: 10, temp2: 10 }, priority: 100 },
+
 
   { react1: "chemical!sulfur", react2: "chemical!fluorine", elem1: "sulfur_hexafluoride", elem2: "fire", priority: 100 },
 
@@ -7363,7 +8142,9 @@ chemjsReactions = [
   { react1: "chemical!sodium_chlorate", react2: "petal", elem1: null, elem2: "dead_plant", priority: 100 },
   { react1: "chemical!sodium_chlorate", react2: "grass_seed", elem1: null, elem2: "dead_plant", priority: 100 },
 
-  { react1: "chemical!sodium_chlorate_solution", react2: "gold", elem1: "sodium_perchlorate_solution", elem2: "no_change", props: { charged: true, chance: 0.05 }, priority: 100 },
+  { react1: "chemical!sodium_chlorate_solution", react2: "chemical!gold", elem1: "sodium_perchlorate_solution", elem2: "no_change", props: { charged: true, chance: 0.05 }, priority: 100 },
+
+  { react1: "chemical!nitric_acid", react2: "chemical!hydrochloric_acid", elem1: "aqua_regia", elem2: "aqua_regia", priority: 100 },
 
   { react1: "chemical!sodium_perchlorate", react2: "chemical!hydrochloric_acid", elem1: "perchloric_acid", elem2: "salt", priority: 100 },
 
@@ -7406,8 +8187,82 @@ chemjsReactions = [
 
   { react1: "chemical!titanium_dioxide", react2: "chemical!chlorine", elem1: "titanium_tetrachloride", elem2: null, props: { tempMin: 825 }, priority: 100 },
 
+  //V
+  { react1: "chemical!vanadinite", react2: "chemical!sodium_carbonate", elem1: "red_cake", elem2: "molten_lead", props: { tempMin: 850 }, priority: 100 },
+  { react1: "chemical!vanadinite", react2: "chemical!sodium_chloride", elem1: "red_cake", elem2: "molten_lead", props: { tempMin: 850 }, priority: 100 },
+  { react1: "chemical!sulfuric_acid", react2: "chemical!red_cake", elem1: "red_cake_solution", elem2: "red_cake_solution", priority: 100 },
+  { react1: "chemical!red_cake_solution", react2: "chemical!ammonium_chloride", elem1: "vanadium_pentoxide", elem2: ["ammonia", "salt"], priority: 100 },
+  { react1: "chemical!vanadium_pentoxide", react2: "chemical!calcium", elem1: "molten_vanadium", elem2: "quicklime", props: { tempMin: 1910, }, priority: 100 },
+  { react1: "chemical!vanadium", react2: "chemical!iron", elem1: null, elem2: "ferrovanadium", props: { tempMin: 1910, }, priority: 100 },
+
+
   //Fe
   { react1: "chemical!hydrochloric_acid", react2: "pyrite", elem1: "iron_dichloride_solution", elem2: "hydrogen_sulfide", deleteReactions: { aa: true }, props: { temp1: 50 }, priority: 100 }, //TODO: Pyrite
+  { react1: "chemical!hematite", react2: "chemical!carbon_monoxide", elem1: "molten_pig_iron", elem2: ["molten_slag", "carbon_dioxide"], props: { tempMin: 1538 }, priority: 100 },
+  { react1: "chemical!oxygen", react2: "chemical!pig_iron", elem1: [null, "carbon_monoxide"], elem2: "molten_iron", props: { tempMin: 1538 }, priority: 100 },
+
+
+  //Cu
+  { react1: "chemical!chalcopyrite", react2: "chemical!carbon", elem1: "molten_copper", elem2: ["molten_slag", "molten_slag", "molten_slag", "sulfur_dioxide", "sulfur_dioxide", "carbon_dioxide"], props: { tempMin: 1085 }, priority: 100 },
+
+  //Cu
+  { react1: "chemical!sphalerite", react2: "chemical!carbon", elem1: "molten_tin", elem2: ["molten_slag", "molten_slag", "molten_slag", "molten_slag", "molten_slag", "molten_gallium", "sulfur_dioxide", "sulfur_dioxide", "sulfur_dioxide", "sulfur_dioxide", "carbon_dioxide", "carbon_dioxide"], props: { tempMin: 430 }, priority: 100 },
+
+  //Ga
+
+  {
+    react1: "chemical!gallium", react2: "chemical!tin", elem1: "no_change", elem2: "no_change", props: {
+      func: function (pixel1, pixel2) {
+        changePixel(pixel1, "incomplete_galinstan");
+        pixel1.hasTin = true;
+        if (Math.random() < 1 / 3) {
+          deletePixel(pixel2.x, pixel2.y);
+        }
+      }, tempMin: 30,
+    }, priority: 100
+  },
+  {
+    react1: "chemical!gallium", react2: "chemical!indium", elem1: "no_change", elem2: "no_change", props: {
+      func: function (pixel1, pixel2) {
+        changePixel(pixel1, "incomplete_galinstan");
+        pixel1.hasIndium = true;
+        if (Math.random() < 1 / 3) {
+          deletePixel(pixel2.x, pixel2.y);
+        }
+      }, tempMin: 30,
+    }, priority: 100
+  },
+  {
+    react1: "chemical!incomplete_galinstan", react2: "chemical!tin", elem1: "no_change", elem2: "no_change", props: {
+      func: function (pixel1, pixel2) {
+        if (!pixel1.hasTin) {
+          pixel1.hasTin = true;
+          if (Math.random() < 1 / 3) {
+            deletePixel(pixel2.x, pixel2.y);
+          }
+        }
+        if (pixel1.hasTin && pixel1.hasIndium) {
+          changePixel(pixel1, "galinstan");
+        }
+      }, tempMin: 30,
+    }, priority: 100
+  },
+  {
+    react1: "chemical!incomplete_galinstan", react2: "chemical!indium", elem1: "no_change", elem2: "no_change", props: {
+      func: function (pixel1, pixel2) {
+        if (!pixel1.hasIndium) {
+          pixel1.hasIndium = true;
+          if (Math.random() < 1 / 3) {
+            deletePixel(pixel2.x, pixel2.y);
+          }
+        }
+        if (pixel1.hasTin && pixel1.hasIndium) {
+          changePixel(pixel1, "galinstan");
+        }
+      }, tempMin: 30,
+    }, priority: 100
+  },
+
 
   //Br
 
@@ -7429,6 +8284,11 @@ chemjsReactions = [
   { react1: "chemical!indium_iii,restrictchemical!water", react2: "chemical!bases,restrictchemical!hydroxide", elem1: "chemical!liquid_salt_water,react1restrict!anion,react2restrict!cationBase,one!", elem2: "indium_hydroxide", priority: 20 },
   { react1: "chemical!indium_iii", react2: "chemical!bases,restrictchemical!hydroxide,restrictchemical!base_solution", elem1: "chemical!liquid_salt_water,react1restrict!anion,react2restrict!cationBase,one!", elem2: "indium_hydroxide", priority: 20 },
   { react1: "chemical!indium_iii", react2: "chemical!bases,restrictchemical!hydroxide", elem1: "chemical!solid_salt,react1restrict!anion,react2restrict!cationBase,one!", elem2: "indium_hydroxide", priority: 20 },
+
+  { react1: "neutron", react2: "chemical!indium", elem1: ["radiation", null, null], elem2: "no_change", props: { chance: 0.5 }, priority: 100 },
+  
+  //Sn
+  { react1: "chemical!cassiterite", react2: "chemical!carbon", elem1: "molten_tin", elem2: ["molten_slag", "molten_slag", "molten_slag", "carbon_dioxide", "carbon_dioxide", "carbon_dioxide"], props: { tempMin: 1700 }, priority: 100 },
 
   //I
   { react1: "water", react2: "chemical!iodine", elem1: "disinfectant", elem2: null, priority: 100 },
@@ -7457,6 +8317,18 @@ chemjsReactions = [
   { react1: "chemical!tungsten_hexafluoride", react2: "chemical!liquid_water", elem1: "tungsten", elem2: "hydrofluoric_acid", priority: 10 },
   { react1: "chemical!tungsten_hexafluoride", react2: "chemical!liquid_water", elem1: "tungsten", elem2: "hydrofluoric_acid", priority: 10 },
 
+  //Au
+
+  { react1: "chemical!gold", react2: "chemical!aqua_regia", elem1: "chloroauric_acid_solution", elem2: ["nitrogen_dioxide", "chloroauric_acid_solution"], deleteReactions: { ba: true }, priority: 100 },
+  { react1: "chemical!nitric_acid", react2: "chemical!chloroauric_acid_solution", elem1: "no_change", elem2: "no_change", priority: 100 },
+
+  //Pt
+
+  { react1: "chemical!platinum", react2: "chemical!aqua_regia", elem1: "chloroplatinic_acid_solution", elem2: ["nitrogen_dioxide", "chloroplatinic_acid_solution"], deleteReactions: { ba: true }, priority: 100 },
+  { react1: "chemical!nitric_acid", react2: "chemical!chloroplatinic_acid_solution", elem1: "no_change", elem2: "no_change", priority: 100 },
+  { react1: "chemical!chloroplatinic_acid", react2: "chemical!sodium_nitrate", elem1: ["salt", "nitric_acid", "nitrogen_dioxide", "nitrogen_dioxide"], elem2: "adams_catalyst", props: { tempMin: 100 }, priority: 100 },
+  { react1: "chemical!platinum_dioxide", react2: "chemical!hydrogen", elem1: "platinum_black", elem2: "steam", props: { temp1: 50, temp2: 50 }, priority: 100 },
+
   //Hg
 
   { react1: "chemical!mercury", react2: "chemical!liquid_water,ignore!dirty_water,ignore!salt_water,ignore!potassium_salt_water", elem1: null, elem2: "dirty_water", priority: 10 },
@@ -7477,6 +8349,9 @@ chemjsReactions = [
 
   { react1: "chemical!thallium", react2: "hair", elem1: "no_change", elem2: null, priority: 100 },
   { react1: "chemical!thallium_i", react2: "hair", elem1: "no_change", elem2: null, priority: 100 },
+
+  //Pb
+  { react1: "chemical!galena", react2: "chemical!carbon", elem1: ["molten_lead", "molten_lead", "molten_lead", "molten_lead", "molten_lead", "molten_lead", "molten_lead", "molten_lead", "molten_lead", "molten_silver"], elem2: ["molten_slag", "molten_slag", "molten_slag", "sulfur_dioxide", "sulfur_dioxide", "carbon_dioxide"], props: { tempMin: 1000 }, priority: 100 },
 
   //Po
   { react1: "chemical!stable_polonium", react2: "chemical!oxygen", elem1: "polonium_dioxide", elem2: null, props: { tempMin: 0 }, priority: 100 },
@@ -7584,13 +8459,13 @@ chemjsReactions = [
   { react1: "chemical!neptunium_dioxide", react2: "chemical!hydrofluoric_acid", elem1: "neptunium_tetrafluoride", elem2: "fire", priority: 100 },
   { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!fluorine", elem1: "neptunium_hexafluoride", elem2: "fire", priority: 100 },
 
-  { react1: "chemical!neptunium_dioxide", react2: "chemical!magnesium", elem1: "stable_protactinium", elem2: "magnesium_oxide", props: { tempMin: 200 }, priority: 100 },
-  { react1: "chemical!neptunium_dioxide", react2: "chemical!calcium", elem1: "stable_protactinium", elem2: "quicklime", props: { tempMin: 500 }, priority: 100 },
+  { react1: "chemical!neptunium_dioxide", react2: "chemical!magnesium", elem1: "stable_neptunium", elem2: "magnesium_oxide", props: { tempMin: 200 }, priority: 100 },
+  { react1: "chemical!neptunium_dioxide", react2: "chemical!calcium", elem1: "stable_neptunium", elem2: "quicklime", props: { tempMin: 500 }, priority: 100 },
 
-  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!magnesium", elem1: "stable_protactinium", elem2: "magnesium_fluoride", props: { tempMin: 200 }, priority: 100 },
-  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!calcium", elem1: "stable_protactinium", elem2: "fluorite", props: { tempMin: 500 }, priority: 100 },
-  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!sodium", elem1: "stable_protactinium", elem2: "sodium_fluoride", props: { tempMin: 200 }, priority: 100 },
-  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!potassium", elem1: "stable_protactinium", elem2: "potassium_fluoride", props: { tempMin: 200 }, priority: 100 },
+  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!magnesium", elem1: "stable_neptunium", elem2: "magnesium_fluoride", props: { tempMin: 200 }, priority: 100 },
+  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!calcium", elem1: "stable_neptunium", elem2: "fluorite", props: { tempMin: 500 }, priority: 100 },
+  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!sodium", elem1: "stable_neptunium", elem2: "sodium_fluoride", props: { tempMin: 200 }, priority: 100 },
+  { react1: "chemical!neptunium_tetrafluoride", react2: "chemical!potassium", elem1: "stable_neptunium", elem2: "potassium_fluoride", props: { tempMin: 200 }, priority: 100 },
 
   { react1: "chemical!neptunium_hexafluoride", react2: "chemical!hydrogen", elem1: "neptunium_tetrafluoride", elem2: "hydrogen_fluoride", priority: 100 },
   { react1: "chemical!neptunium_hexafluoride", react2: "chemical!liquid_water", elem1: "neptunium_tetrafluoride", elem2: "hydrofluoric_acid", priority: 100 },
@@ -7719,7 +8594,6 @@ chemjsReactions = [
 
   { react1: "chemical!einsteinium", react2: "chemical!calcium", elem1: "ununennium", elem2: null, props: { chance: 0.01, tempMin: 10000 }, priority: 100 },
 
-  { react1: "chemical!ununennium", react2: "rad_steam", elem1: "n_explosion", elem2: null, priority: 100 },
   { react1: "chemical!ununennium", react2: "steam", elem1: "n_explosion", elem2: null, priority: 100 },
   { react1: "chemical!ununennium", react2: "chemical!liquid_water", elem1: "n_explosion", elem2: null, priority: 10 },
 
@@ -7758,7 +8632,10 @@ chemjsReactions = [
   { react1: "bless", react2: "chemical!foof", elem1: "no_change", elem2: "oxygen", priority: 100 },
   { react1: "bless", react2: "chemical!hydrogen_sulfide", elem1: "no_change", elem2: "hydrogen", priority: 100 },
   { react1: "bless", react2: "chemical!sulfur_dioxide", elem1: "no_change", elem2: "oxygen", priority: 100 },
+  { react1: "bless", react2: "chemical!sulfur_trioxide", elem1: "no_change", elem2: "oxygen", priority: 100 },
   { react1: "bless", react2: "chemical!ammonium_perchlorate", elem1: "no_change", elem2: null, priority: 100 },
+  { react1: "bless", react2: "chemical!red_cake", elem1: "no_change", elem2: [null, null, null, "baked_batter"], priority: 100 },
+  { react1: "bless", react2: "chemical!red_cake_solution", elem1: "no_change", elem2: [null, null, null, "baked_batter", "hydrogen", "hydrogen", "hydrogen", "hydrogen"], priority: 100 },
   { react1: "bless", react2: "chemical!bromine", elem1: "no_change", elem2: [null, null, null, "soy_sauce"], priority: 100 },
   { react1: "bless", react2: "chemical!polonium", elem1: "no_change", elem2: null, priority: 100 },
   { react1: "bless", react2: "chemical!astatine", elem1: "no_change", elem2: null, priority: 100 },
@@ -7816,9 +8693,10 @@ chemjsReactions = [
   { react1: "bless", react2: "chemical!quark_matter", elem1: "no_change", elem2: "neutron", priority: 100 },
   { react1: "bless", react2: "chemical!caustic", elem1: "no_change", elem2: "hydrogen", priority: 100 },
 
-  { react1: "bless", react2: "chemical!rad_pop", elem1: "no_change", elem2: null, priority: 100 },
-  { react1: "bless", react2: "chemical!big_explosion", elem1: "no_change", elem2: null, priority: 100 },
-  { react1: "bless", react2: "chemical!gamma_ray_burst", elem1: "no_change", elem2: null, priority: 100 },
+  { react1: "bless", react2: "rad_pop", elem1: "no_change", elem2: null, priority: 100 },
+  { react1: "bless", react2: "big_explosion", elem1: "no_change", elem2: null, priority: 100 },
+  { react1: "bless", react2: "gamma_ray_burst", elem1: "no_change", elem2: null, priority: 100 },
+  { react1: "bless", react2: "transactinide_fallout", elem1: "no_change", elem2: null, priority: 100 },
 ];
 
 function createChemicals() {

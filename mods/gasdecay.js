@@ -1,4 +1,4 @@
-let gasBlacklist = ["pointer", "tornado"]
+let gasBlacklist = ["pointer", "tornado", "sun"]
 let gasDecaySpeed = 0.002
 runAfterLoad(function(){
     runPerPixel(function(pixel){

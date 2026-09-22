@@ -671,7 +671,7 @@ window.addEventListener("load",function(){
     parent.insertBefore(erase,parent.firstChild);
     document.getElementById("replaceButton").remove();
     document.getElementById("savesButton").remove();
-    document.getElementById("elemSelectButton").remove();
+    // document.getElementById("elemSelectButton").remove();
     doRandomEvents = function() {}
     worldGen = function() {}
     worldgentypes = {}

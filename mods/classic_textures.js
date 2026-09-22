@@ -105,6 +105,7 @@ if (elements.mycelium) {elements.mycelium.color = ["#734d5e","#b5949f","#734d53"
 if (elements.glass) {elements.glass.color = ["#5e807d","#679e99"];}
 if (elements.rad_glass) {elements.rad_glass.color = ["#648c64","#6aad83"];}
 if (elements.packed_sand) {elements.packed_sand.color = "#a1975d";}
+if (elements.sandstone) {elements.sandstone.color = "#a1975d";}
 if (elements.dough) {elements.dough.color = "#edd8ba";}
 if (elements.flour) {elements.flour.color = "#f0e2b7";}
 if (elements.frozen_meat) {elements.frozen_meat.color = "#65b8aa";}
@@ -190,6 +191,7 @@ if (elements.purple_gold) {elements.purple_gold.color = ["#f58fda","#d06cb5","#f
 if (elements.acid) {elements.acid.color = ["#b5cf91","#a1ff5e","#288f2a"];}
 if (elements.fire) {elements.fire.color = ["#ff6b21","#ffa600","#ff4000"];}
 if (elements.cold_fire) {elements.cold_fire.color = ["#21cbff","#006aff","#00ffff"];}
+if (elements.wet_sand) {elements.wet_sand.color = ["#a19348","#b5a85e"];}
 
 for (let element in elements) {
     if (elements[element].buttonColor !== undefined) delete elements[element].buttonColor;

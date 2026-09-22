@@ -14,7 +14,7 @@ const menu = { // Just change the values in this.
 	pauseButton: 'Pauza',
 	resetButton: 'Reset',
 	replaceButton: 'Nahradit',
-	elemSelectButton: 'VE',
+	// elemSelectButton: 'VE',
 	tpsButton: 'TZS',
 	infoButton: 'Info',
 	savesButton: 'Uložené',
