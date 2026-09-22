@@ -3,6 +3,7 @@ styleElement.innerHTML = `
 .tooltip {
     z-index: 1000;
     position: relative;
+    flex-grow: 1;
 }
 
 .tooltip .tooltiptext {
@@ -11,7 +12,6 @@ styleElement.innerHTML = `
     color: #fff;
     text-align: center;
     padding: 0.5em;
-    border-radius: 0.5em;
     position: absolute;
     z-index: 1000;
     bottom: 100%;
@@ -19,26 +19,46 @@ styleElement.innerHTML = `
     transform: translateX(-50%);
     pointer-events: none;
     text-shadow: none;
+    --button-border: #4d4d4d;
 }
   
 .tooltip:hover .tooltiptext {
     visibility: visible;
     font-variant: normal;
 }
+    
+@keyframes quark {
+  0%   {color:#ff0000;}
+  33.3%  {color:#00ff00;}
+  66.7%  {color:#0000ff;}
+  100%  {color:#ff0000;}
+}
+
+.quark {
+  animation-name: quark;
+  animation-duration: 3s;
+  animation-iteration-count: infinite;
+}
 `
 
 document.head.appendChild(styleElement);
 
 runAfterLoad(async () => {
-    const data = await fetch('mods/chemFormulas.json').then((res) => res.json());
+    const data = await fetch('https://mods.r74n.com/mods/chemFormulas.json').then((res) => res.json()); //TODO change
     for (const element in data) {   
         if (elements[element]) {
             elements[element].hoverStat = () => data[element].join(", ").replace(/\<.*?\>/g, "");
-            document.querySelector(`button[element='${element}']`)?.classList.add('tooltip');
-            const span = document.createElement('span');
-            span.classList.add('tooltiptext');
-            span.innerHTML = data[element].join("<br>");
-            document.querySelector(`button[element='${element}']`)?.appendChild(span);
+            if (document.querySelector(`button[element='${element}']`)) {
+                const div = document.createElement('div');
+                div?.classList.add('tooltip');
+                const button = document.querySelector(`button[element='${element}']`);
+                button?.replaceWith(div);
+                div.appendChild(button);
+                const span = document.createElement('span');
+                span.classList.add('tooltiptext','elementButton');
+                span.innerHTML = data[element].join("<br>");
+                div?.appendChild(span);
+            }
         }
     }
 });
