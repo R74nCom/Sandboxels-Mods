@@ -1,3 +1,5 @@
+//created by 𝔜𝔒𝔖𝔈𝔉
+//penguins.js v2.0 fixed various bugs and added walrus, artic wolf and clam (:
 elements.penguin = {
     color: ["#0c0c12","#babae3","#02022e","#d2d2fc","#000000","#5946f0","#5b5b5c","#95a7c4","#f5f17f"],
     state: "solid",
@@ -7,12 +9,12 @@ elements.penguin = {
         "M2|M1|M1 AND SW:water,salt_water,sugar_water,dirty_water%15"
     ],
     reactions: {
-        "meat": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "cooked_meat": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "fish": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "plant": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "frozen_fish": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "herring": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
+        "meat": { elem2:null, chance:0.2 },
+        "cooked_meat": { elem2:null, chance:0.2 },
+        "fish": { elem2:null, chance:0.2 },
+        "plant": { elem2:null, chance:0.2 },
+        "frozen_fish": { elem2:null, chance:0.3 },
+        "herring": { elem2:null, chance:0.3 },
         "oxygen": { elem2:"carbon_dioxide", chance:0.3 },
         "poison": { elem1:"rotten_meat", chance:0.1 },
         "bleach": { elem1:"rotten_meat", chance:0.1 },
@@ -49,11 +51,11 @@ elements.little_penguin = {
         "M2|M1|M1 AND SW:water,salt_water,sugar_water,dirty_water%15"
     ],
     reactions: {
-        "meat": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "cooked_meat": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "fish": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "frozen_fish": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "herring": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
+        "meat": { elem2:null, chance:0.2 },
+        "cooked_meat": { elem2:null, chance:0.2 },
+        "fish": { elem2:null, chance:0.2 },
+        "frozen_fish": { elem2:null, chance:0.3 },
+        "herring": { elem2:null, chance:0.3 },
         "oxygen": { elem2:"carbon_dioxide", chance:0.3 },
         "poison": { elem1:"rotten_meat", chance:0.1 },
         "bleach": { elem1:"rotten_meat", chance:0.1 },
@@ -86,20 +88,20 @@ elements.polar_bear = {
     state: "solid",
     behavior: [
         "XX|XX|XX",
-        "AT:penguin,little_penguin,seal,rat%35|FX%1|M1 AND AT:penguin,little_penguin,seal,rat,herring%25",
+        "AT:penguin,little_penguin,seal,rat%35|FX%1|M1 AND AT:penguin,little_penguin,seal,rat%25",
         "M2|M1|M1"
     ],
     ignore: ["polar_bear", "polar_bear_cub"],
     reactions: {
         "fish": { elem2: null, chance: 0.2 },
-        "herring": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "penguin": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "seal": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "little_penguin": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
         "oxygen": { elem2: "carbon_dioxide", chance: 0.3 },
         "poison": { elem1: "rotten_meat", chance: 0.1 },
         "bleach": { elem1: "rotten_meat", chance: 0.1 },
-        "infection": { elem1: "rotten_meat", chance: 0.025 }
+        "infection": { elem1: "rotten_meat", chance: 0.025 },
+        "herring": { elem2: null, chance: 0.3 },
+        "penguin": { elem2: null, chance: 0.3 },
+        "seal": { elem2: null, chance: 0.3 },
+        "little_penguin": { elem2: null, chance: 0.3 }
     },
     foodNeed: 15,
     temp: 31,
@@ -120,16 +122,16 @@ elements.polar_bear_cub = {
     state: "solid",
     behavior: [
         "XX|XX|XX",
-        "AT:penguin,little_penguin,rat%20|FX%1|M1 AND AT:penguin,little_penguin,rat,herring%15",
+        "AT:penguin,little_penguin,rat%20|FX%1|M1 AND AT:penguin,little_penguin,rat%15",
         "M2|M1|M1"
     ],
     ignore: ["polar_bear", "polar_bear_cub"],
     reactions: {
         "fish": { elem2: null, chance: 0.2 },
-        "seal": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "herring": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
+        "herring": { elem2: null, chance: 0.2 },
         "oxygen": { elem2: "carbon_dioxide", chance: 0.3 }
     },
+    baby: "polar_bear",
     foodNeed: 8,
     temp: 31,
     tempHigh: 80,
@@ -153,10 +155,10 @@ elements.seal = {
         "M2|M1|M1"
     ],
     reactions: {
-        "fish": { elem2: null, chance: 0.25, func: behaviors.FEEDPIXEL },
-        "frozen_fish": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "herring": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "algae": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
+        "fish": { elem2: null, chance: 0.25 },
+        "frozen_fish": { elem2: null, chance: 0.3 },
+        "herring": { elem2: null, chance: 0.3 },
+        "algae": { elem2: null, chance: 0.3 },
         "oxygen": { elem2: "carbon_dioxide", chance: 0.3 },
         "poison": { elem1: "rotten_meat", chance: 0.1 }
     },
@@ -186,10 +188,10 @@ elements.killer_whale = {
     ignore: ["killer_whale"],
     reactions: {
         "fish": { elem2: null, chance: 0.3 },
-        "herring": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "penguin": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "seal": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "little_penguin": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
+        "herring": { elem2: null, chance: 0.3 },
+        "penguin": { elem2: null, chance: 0.3 },
+        "seal": { elem2: null, chance: 0.3 },
+        "little_penguin": { elem2: null, chance: 0.3 },
         "oxygen": { elem2: "carbon_dioxide", chance: 0.3 }
     },
     category: "life",
@@ -232,34 +234,94 @@ elements.frozen_little_penguin = {
     conduct: 0.1
 };
 
-elements.herring = {
-    color: ["#C0C0C0", "#6a8085", "#b0b7bc"],  
+
+elements.clam = {
+    color: ["#d1c7bd", "#a89b8d", "#ede6de"],
     state: "solid",
     behavior: [
-         "XX|M2%5|SW:water,salt_water,sugar_water,dirty_water,seltzer,pool_water,primordial_soup%14",
-         "XX|FX%0.5|BO",
-         "M2|M1|M2 AND SW:water,salt_water,sugar_water,dirty_water,seltzer,pool_water,primordial_soup%5"
-    ], 
-    ignore: ["herring"],  
+        "XX|XX|XX",
+        "XX|FX%0.1 AND M1 AND SW:water,salt_water,sugar_water%100|XX",
+        "M2|XX|M2"
+    ],
     reactions: {
-        "algae": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "grass": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "fish": { elem2:null, chance:0.2, func:behaviors.FEEDPIXEL },
-        "plant": { elem2:null, chance:0.3, func:behaviors.FEEDPIXEL },
-        "oxygen": { elem2:"carbon_dioxide", chance:0.3 },
-        "poison": { elem1:"rotten_meat", chance:0.1 },
-        "bleach": { elem1:"rotten_meat", chance:0.1 }
+        "oxygen": { elem2: "carbon_dioxide", chance: 0.1 },
+        "poison": { elem1: "rotten_meat", chance: 0.2 }
     },
     category: "life",
-    foodNeed: 4,
-    temp: 10,
-    tempHigh: 55,
+    foodNeed: 2,
+    temp: 8,
+    tempHigh: 50,
     stateHigh: "cooked_meat",
-    tempLow: -15,
+    tempLow: -20,
     stateLow: "frozen_meat",
+    breakInto: "rotten_meat"
+};
+
+elements.walrus = {
+    color: ["#634a3b", "#7c604f", "#4f3729", "#bda698"],
+    state: "solid",
+    behavior: [
+        "XX|SW:water,salt_water,sugar_water%5|XX",
+        "BO:polar_bear,killer_whale%40|FX%1|M1 AND SW:water,salt_water,sugar_water%10 AND BO:polar_bear,killer_whale%20",
+        "M2|M1|M1 AND SW:water,salt_water,sugar_water%10"
+    ],
+    reactions: {
+        "algae": { elem2: null, chance: 0.25 },
+        "herring": { elem2: null, chance: 0.25 },
+        "clam": { elem2: null, chance: 0.35 },
+        "oxygen": { elem2: "carbon_dioxide", chance: 0.3 },
+        "poison": { elem1: "rotten_meat", chance: 0.1 },
+        "fish": { elem2: null, chance: 0.3 },
+        "plant": { elem2: null, chance: 0.3 }
+    },
+    egg: "walrus",
+    foodNeed: 14,
+    temp: 36,
+    tempHigh: 85,
+    stateHigh: "cooked_meat",
+    tempLow: -130,
+    stateLow: "frozen_meat",
+    category: "life",
     breakInto: "rotten_meat",
-    burn: 10,
-    burnTime: 180,
-    density: 1015,
-    conduct: 0.15
+    burn: 15,
+    burnTime: 260,
+    density: 1200,
+    conduct: 0.18
+};
+
+elements.arctic_wolf = {
+    color: ["#fcfcfc", "#eaeaea", "#d3d3d3", "#b5b5b5"],
+    state: "solid",
+    behavior: [
+        "XX|XX|XX",
+        "AT:penguin,little_penguin,rat,rabbit,seal%40 AND BO:polar_bear%40|FX%1|M1%80 AND AT:penguin,little_penguin,rat,rabbit,seal%30 AND BO:polar_bear%30",
+        "M2%50|M1%80|M1%80"
+    ],
+    ignore: ["arctic_wolf"],
+    reactions: {
+        "meat": { elem2: null, chance: 0.25 },
+        "cooked_meat": { elem2: null, chance: 0.25 },                                                                                 
+        "oxygen": { elem2: "carbon_dioxide", chance: 0.3 },
+        "poison": { elem1: "rotten_meat", chance: 0.1 },
+        "bleach": { elem1: "rotten_meat", chance: 0.1 },
+        "infection": { elem1: "rotten_meat", chance: 0.025 },
+        "herring": { elem2: null, chance: 0.3 },
+        "penguin": { elem2: null, chance: 0.3 },
+        "seal": { elem2: null, chance: 0.3 },
+        "little_penguin": { elem2: null, chance: 0.3 },
+        "fish": { elem2: null, chance: 0.3 }
+    },
+    egg: "arctic_wolf",
+    foodNeed: 12,
+    temp: 32,
+    tempHigh: 78,
+    stateHigh: "cooked_meat",
+    tempLow: -140,
+    stateLow: "frozen_meat",
+    category: "life",
+    breakInto: "rotten_meat",
+    burn: 15,
+    burnTime: 220,
+    density: 1400,
+    conduct: 0.22
 };
