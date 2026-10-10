@@ -1,3 +1,5 @@
+"use strict";
+
 (() => {
 const STYLE = `
 html, body {
@@ -127,11 +129,6 @@ a:hover { text-decoration: underline; }
 table {
 	border-collapse: collapse;
 	background-color: var(--theme-darker);
-}
-#controlsTable {
-	width: 75%;
-	margin-left: auto;
-	margin-right: 0px;
 }
 /* alternating table row colors */
 tr:nth-child(even) {
@@ -1203,7 +1200,9 @@ img {
   padding-right: 1em;
   display: none;
 }
+`
 
+const OJS_STYLE = `
 #promptParent:has(#ojs_changelog) {
     max-height: none;
     height: 70vh;
@@ -1265,6 +1264,120 @@ img {
         }
     }
 }
+
+.ojs_tbl {
+    margin: 0.75em 0.25em 0.75em 0.25em;
+
+    &[data-old_id="buttonsTable"] tr td:first-child {
+        max-width: 33%;
+        min-width: 6em
+    }
+}
+
+
+#offline-tab {
+    margin-left: 0.25em;
+    margin-right: 0.25em;
+}
+
+.ojs_infobtn {
+    color: #F0F;
+    cursor: pointer;
+
+    &:hover { text-decoration: underline }
+}
+
+#toolControls.controlsScrollbar {
+    scrollbar-width: none;
+}
+`
+
+const TICON_STYLE = `
+#toolControls button.icon > span {
+	display: block;
+    margin: 0 10px;
+
+	width: var(--ojs-tbicon-sz);
+	font-size: var(--ojs-tbicon-sz);
+    aspect-ratio: 1;
+
+	color: transparent !important;
+	background-image: url("ui_icons.png");
+	background-repeat: no-repeat;
+	background-size: auto 300%;
+	background-clip: content-box;
+	background-origin: content-box;
+	box-sizing: content-box;
+	opacity: 0.8;
+	overflow-x: hidden;
+	/* transition: 0.1s scale; */
+}
+
+#toolControls button.icon {
+    padding: 5px 0;
+	min-width: var(--ojs-tbbtn-width);
+
+	color: transparent !important;
+	image-rendering: pixelated;
+	text-shadow: none;
+	flex-grow: 1;
+	text-wrap: auto;
+	word-wrap: break-word;
+	line-height: 0;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	padding-top: 5px;
+	padding-bottom: 5px;
+
+    &::after { background: rgba(255, 255, 255, 0.4); }
+}
+
+#toolControls button.icon:active {
+    transform: unset;
+}
+
+#frameButton > span { background-position: -3em 0; }
+#sizeDownButton > span { background-position: -4em 0em; }
+#sizeUpButton > span { background-position: -5em 0em; }
+#undoButton > span { background-position: -6em 0em; }
+#redoButton > span { background-position: -7em 0em; }
+#elemSelectButton > span { background-position: -11em 0em; }
+
+#pauseButton            > span { background-position: -1.05em 0em; }
+#pauseButton[on="true"] > span { background-position: -2em -1em; }
+
+#infoButton            > span { background-position: -11em 0em; }
+#infoButton[on="true"] > span { background-position: -11em -1em; }
+
+#savesButton            > span { background-position: -12em 0em; }
+#savesButton[on="true"] > span { background-position: -12em -1em; }
+
+#modsButton            > span { background-position: -13em 0em; }
+#modsButton[on="true"] > span { background-position: -13em -1em; }
+
+#settingsButton            > span { background-position: -14em 0em; }
+#settingsButton[on="true"] > span { background-position: -14em -1em; }
+
+#editModeButton > span { background-position: -10em 0em; }
+#editModeButton:hover > span,
+#editModeButton[on="true"] > span {
+  background-position: -10em -1em;
+}
+
+#resetButton > span { background-position: -8em 0em; }
+#resetButton:hover > span #resetButton[on="true"] > span {
+    background-position: -8em -1em;
+    color: #f66868;
+}
+
+#replaceButton > span                  { background-position: -9em 0em; }
+#replaceButton[on="true"] > span       { background-position: -9em -1em; }
+#replaceButton[modified="true"] > span { background-position: -9em -2em; }
+
+#shiftButton > span            { background-position: 0em 0em; }
+#shiftButton                   { margin-left: 1em; }
+#shiftButton[on="true"] > span { background-position: 0em -1em; }
 `
 
 function shove_up(elem, count) {
@@ -1299,6 +1412,50 @@ function patch_settings() {
 	shove_up(toggles_row, 7)
 }
 
+function patch_infobtn() {
+    const new_elem = document.createElement("span")
+    new_elem.onclick = showGameInfo
+    new_elem.innerText = "Info"
+    new_elem.classList.add("ojs_infobtn")
+        
+    const old = document .querySelector(".footer-tag.footer-title")
+    old.removeAttribute("onclick")
+    old.insertAdjacentElement("afterend", new_elem)
+    old.insertAdjacentHTML("afterend", "&nbsp;")
+}
+
+function patch_tbl(id, flip = false) {
+    const rows = document.querySelectorAll(".control-row")
+
+    const new_tbl = document.createElement("table")
+    new_tbl.classList.add("ojs_tbl")
+
+    new_tbl.dataset.old_id = id // Imo, the most elegant way to get the game's
+                                // styling not to apply while keeping the old
+                                // table's id
+
+    for (const row of rows) {
+        const l = document.createElement("td")
+        const r = document.createElement("td")
+
+        if (!flip) {
+            l.innerText = row.firstChild.innerText
+            r.innerHTML = row.lastChild.innerHTML
+        }
+        else {
+            l.innerHTML = row.lastChild.innerHTML
+            r.innerText = row.firstChild.innerText
+        }
+
+        const new_row = document.createElement("tr")
+
+        new_row.append(l, r)
+        new_tbl.appendChild(new_row)
+    }
+
+    document.getElementById(id).replaceWith(new_tbl)
+}
+
 // Using the text changelog because it felt like it'd be nicer to get
 // old looking. Also likely to never never break this way, seeing as that
 // thing's layout's probably set in stone)
@@ -1315,6 +1472,8 @@ function parse_changelog(text) {
     const change_regex         = /^    ([+-~]) (.*)$/
 
     for (const line of txt.split("\n")) {
+        let vh_match, subh_match, ch_match;
+
         // poor man's if let
         if (vh_match = version_header_regex.exec(line)) {
             const header = document.createElement("h2")
@@ -1352,13 +1511,16 @@ function parse_changelog(text) {
 
 runAfterLoad(() => {
     const new_elem = document.createElement("style")
-    new_elem.innerHTML = STYLE
+    new_elem.innerHTML = STYLE + OJS_STYLE
 
     document.querySelector(`link[rel="stylesheet"]`).replaceWith(new_elem)
     document.querySelectorAll(".XButton").forEach(x => x.innerText = "-")
 
 	patch_save_to_file()
 	patch_settings()
+    patch_infobtn()
+    patch_tbl("controlsTable")
+    patch_tbl("buttonsTable", true)
 
     window.showChangelog = async () => {
         if (!text) {
@@ -1386,6 +1548,62 @@ runAfterLoad(() => {
 dependOn(
     "betterSettings.js", 
     () => {
+        const set_toolbar_szattr = (attr, v) => {
+            document
+                .getElementById("toolControls")
+                .style
+                .setProperty(attr, `${v}px`)
+        }
+
+        const tbi_style_elem = document.createElement("style")
+        tbi_style_elem.innerHTML = TICON_STYLE
+        document.head.appendChild(tbi_style_elem)
+
+        const tab = new SettingsTab("old.js")
+
+        const toolbar_icon_en = new Setting(
+            "Enable toolbar button icons",
+            "tb_btn_icons",
+            settingType.BOOLEAN,
+            false,
+            true,
+            "Whether to enable icons for toolbar buttons or not",
+            v => tbi_style_elem.disabled = !v
+        )
+
+        const toolbar_icon_size = new Setting(
+            "Toolbar icon size",
+            "tbi_scale",
+            settingType.NUMBER,
+            false,
+            21,
+            "The size of toolbar icons in px",
+            v => {
+                set_toolbar_szattr("--ojs-tbicon-sz", v)
+                return true
+            }
+        )
+        
+        const toolbar_btn_width = new Setting(
+            "Minimum toolbar button width",
+            "tb_btn_width",
+            settingType.NUMBER,
+            false,
+            60,
+            "The size of toolbar icons in px",
+            v => {
+                set_toolbar_szattr("--ojs-tbbtn-width", v)
+                return true
+            }
+        )
+
+        tab.registerSettings(null, toolbar_icon_en, toolbar_btn_width, toolbar_icon_size)
+        settingsManager.registerTab(tab)
+
+        tbi_style_elem.disabled = !toolbar_icon_en.value
+        set_toolbar_szattr("--ojs-tbicon-sz", toolbar_icon_size.value)
+        set_toolbar_szattr("--ojs-tbbtn-width", toolbar_btn_width.value)
+
         document
             .querySelectorAll(`input[id^="betterSettings"],select[id^="betterSettings"]`)
             .forEach(x => x.classList.add("settingsInput"))
