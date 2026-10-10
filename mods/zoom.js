@@ -674,7 +674,10 @@
     runAfterLoad(() => {
       const patcher = new Patcher(settings_manager);
       const handler = new Handler(settings_manager, patcher);
-      dependOn("worldEdit.js", () => patch_worldedit(handler));
+      dependOn("https://mods.r74n.com/mods/worldEdit.js", () => {
+        console.log("patching worldedit");
+        patch_worldedit(handler);
+      });
       on_change.cb = () => patcher.update_from_settings();
       const q = "#betterSettings\\/div\\/zoom\\.jsinput[id^=betterSettings],select[id^=betterSettings]";
       document.querySelectorAll(q).forEach((x) => x.classList.add("settingsInput"));
