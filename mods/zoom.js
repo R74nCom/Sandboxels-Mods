@@ -449,11 +449,11 @@
     }
     mouse_to_world(x, y) {
       const rect = canvas.getBoundingClientRect();
-      const x_scaled = (x - rect.left) / this.scale();
-      const y_scaled = (y - rect.top) / this.scale();
+      const x_rel = (x - rect.left) / canvas.clientWidth;
+      const y_rel = (y - rect.top) / canvas.clientHeight;
       return {
-        x: Math.floor(x_scaled / canvas.clientWidth * (width + 1)),
-        y: Math.floor(y_scaled / canvas.clientHeight * (height + 1))
+        x: Math.floor(x_rel / this.scale() * (width + 1)),
+        y: Math.floor(y_rel / this.scale() * (height + 1))
       };
     }
     handle_zoom(direction) {
