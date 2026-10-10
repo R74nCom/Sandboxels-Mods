@@ -130,11 +130,6 @@ table {
 	border-collapse: collapse;
 	background-color: var(--theme-darker);
 }
-#controlsTable {
-	width: 75%;
-	margin-left: auto;
-	margin-right: 0px;
-}
 /* alternating table row colors */
 tr:nth-child(even) {
 	background-color: var(--theme-darkest);
@@ -1269,6 +1264,32 @@ const OJS_STYLE = `
         }
     }
 }
+
+.ojs_tbl {
+    margin: 0.75em 0.25em 0.75em 0.25em;
+
+    &[data-old_id="buttonsTable"] tr td:first-child {
+        max-width: 33%;
+        min-width: 6em
+    }
+}
+
+
+#offline-tab {
+    margin-left: 0.25em;
+    margin-right: 0.25em;
+}
+
+.ojs_infobtn {
+    color: #F0F;
+    cursor: pointer;
+
+    &:hover { text-decoration: underline }
+}
+
+#toolControls.controlsScrollbar {
+    scrollbar-width: none;
+}
 `
 
 function shove_up(elem, count) {
@@ -1301,6 +1322,50 @@ function patch_settings() {
 		"#settingsMenu .toggles-row"
 	)
 	shove_up(toggles_row, 7)
+}
+
+function patch_infobtn() {
+    const new_elem = document.createElement("span")
+    new_elem.onclick = showGameInfo
+    new_elem.innerText = "Info"
+    new_elem.classList.add("ojs_infobtn")
+        
+    const old = document .querySelector(".footer-tag.footer-title")
+    old.removeAttribute("onclick")
+    old.insertAdjacentElement("afterend", new_elem)
+    old.insertAdjacentHTML("afterend", "&nbsp;")
+}
+
+function patch_tbl(id, flip = false) {
+    const rows = document.querySelectorAll(".control-row")
+
+    const new_tbl = document.createElement("table")
+    new_tbl.classList.add("ojs_tbl")
+
+    new_tbl.dataset.old_id = id // Imo, the most elegant way to get the game's
+                                // styling not to apply while keeping the old
+                                // table's id
+
+    for (const row of rows) {
+        const l = document.createElement("td")
+        const r = document.createElement("td")
+
+        if (!flip) {
+            l.innerText = row.firstChild.innerText
+            r.innerHTML = row.lastChild.innerHTML
+        }
+        else {
+            l.innerHTML = row.lastChild.innerHTML
+            r.innerText = row.firstChild.innerText
+        }
+
+        const new_row = document.createElement("tr")
+
+        new_row.append(l, r)
+        new_tbl.appendChild(new_row)
+    }
+
+    document.getElementById(id).replaceWith(new_tbl)
 }
 
 // Using the text changelog because it felt like it'd be nicer to get
@@ -1365,6 +1430,9 @@ runAfterLoad(() => {
 
 	patch_save_to_file()
 	patch_settings()
+    patch_infobtn()
+    patch_tbl("controlsTable")
+    patch_tbl("buttonsTable", true)
 
     window.showChangelog = async () => {
         if (!text) {
