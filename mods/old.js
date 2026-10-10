@@ -1,3 +1,5 @@
+"use strict";
+
 (() => {
 const STYLE = `
 html, body {
@@ -1315,6 +1317,8 @@ function parse_changelog(text) {
     const change_regex         = /^    ([+-~]) (.*)$/
 
     for (const line of txt.split("\n")) {
+        let vh_match, subh_match, ch_match;
+
         // poor man's if let
         if (vh_match = version_header_regex.exec(line)) {
             const header = document.createElement("h2")
