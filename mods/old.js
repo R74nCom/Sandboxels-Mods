@@ -1205,7 +1205,9 @@ img {
   padding-right: 1em;
   display: none;
 }
+`
 
+const OJS_STYLE = `
 #promptParent:has(#ojs_changelog) {
     max-height: none;
     height: 70vh;
@@ -1356,7 +1358,7 @@ function parse_changelog(text) {
 
 runAfterLoad(() => {
     const new_elem = document.createElement("style")
-    new_elem.innerHTML = STYLE
+    new_elem.innerHTML = STYLE + OJS_STYLE
 
     document.querySelector(`link[rel="stylesheet"]`).replaceWith(new_elem)
     document.querySelectorAll(".XButton").forEach(x => x.innerText = "-")
