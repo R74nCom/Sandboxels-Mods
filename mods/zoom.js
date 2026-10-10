@@ -189,6 +189,8 @@
     show_pos;
     show_floater;
     floater_scale;
+    floater_bg;
+    floater_fg;
     pan_zeroing_en;
     zoom_zeroing_en;
     reset_on_reset;
@@ -251,6 +253,24 @@
         false,
         1,
         "The floater scale",
+        validator
+      );
+      this.floater_fg = new Setting(
+        "Floater foreground",
+        "floater_fg",
+        settingType.COLOR,
+        false,
+        "#FFFFFF",
+        "Foreground colour for the floater",
+        validator
+      );
+      this.floater_bg = new Setting(
+        "Floater background",
+        "floater_bg",
+        settingType.COLOR,
+        false,
+        "#000000",
+        "Background colour for the floater",
         validator
       );
       this.show_pos = new Setting(
@@ -373,7 +393,9 @@
       settings_tab.registerSettings(
         "Floater",
         this.show_floater,
-        this.floater_scale
+        this.floater_scale,
+        this.floater_fg,
+        this.floater_bg
       );
       settings_tab.registerSettings(
         "Keybinds (requires reset)",
@@ -585,7 +607,7 @@
   var numlist_default = "#settingsMenu .zm_nml_btn_container {\n    display: flex;\n    gap: 0.5em;\n\n    button {\n        display: inline;\n        width: 0.7em;\n        font-size: 2em;\n        padding: 0;\n        margin: 0;\n        filter: brightness(0.85);\n\n        &:hover {\n            filter: brightness(1)\n        }\n    }\n}\n#settingsMenu .zm_nml_icontainer { align-self: center; flex-wrap: wrap; }\n#settingsMenu .zm_nml_setting { display: grid; grid-template-columns: 7em 1fr;}\n\n#settingsMenu .zm_nml_setting span {\n    color: #fff;\n\n    input {\n        width: 2.5em;\n        margin-right: 4px;\n        margin-bottom: 4px;\n    }\n    \n    input:focus {\n        outline: none;\n        box-shadow: none;\n        border-color: white;\n    }\n}\n";
 
   // assets/main.css
-  var main_default = '#zm_data_div {\n    margin-bottom: 10px;\n}\n\n#canvasDiv {\n    overflow: hidden;\n    background-color: var(--opac-85);\n}\n\n#zm_floater_container:has(#zm_collapse[data-collapsed="true"]) {\n    width: calc(33px * var(--zm-floater-scale));\n    button:not(#zm_collapse) {\n        display: none;\n    }\n}\n\n#colorSelector {\n    z-index: 1;\n    right: 5px;\n}\n\n#zm_floater_container {\n    position: absolute;\n    display: grid;\n    right: 5px;\n    bottom: 5px;\n    width: calc(100px * var(--zm-floater-scale));\n    max-width: calc(200px * var(--zm-floater-scale));\n    max-height: calc(200px * var(--zm-floater-scale));\n    aspect-ratio: 1;\n    border: 2px solid white;\n    background-color: black;\n    font-size: calc(120% * var(--zm-floater-scale));\n\n    button {\n        text-align: center;\n        border: 0px solid white;\n    }\n\n    button:where([data-pos="tl"]) { border-width: 0px 2px 2px 0px; }\n    button:where([data-pos="tr"]) { border-width: 2px 2px 0px 0px; }\n    button:where([data-pos="bl"]) { border-width: 0px 0px 2px 2px; }\n    button:where([data-pos="br"]) { border-width: 2px 0px 0px 2px; }\n}\n\n#canvasDiv:has(#colorSelector[style *= "block"]) #zm_floater_container {\n    bottom: 50px;\n}\n\n.zm_corner { border: 2px solid white; }\n\n#zm_collapse {\n    grid-row: 3;\n    grid-column: 3;\n\n    &[data-collapsed="true"] {\n        grid-row: 1;\n        grid-column: 1;\n        aspect-ratio: 1;\n        border-width: 0px;\n    }\n}\n\n#betterSettings\\/div\\/zoom\\.js .setting-span {\n    display: grid;\n    grid-template-columns: 230px 1fr;\n    &:has(> .toggleInput:first-child) {\n        display: grid;\n    }\n    input[type="color"] {\n        width: 100%;\n        border: none;\n    }\n    .toggleInput {\n        padding-right: 10%;\n        clip-path: none;\n        &:hover {\n            transform: initial;\n        }\n    }\n}\n\n#betterSettings\\/div\\/zoom\\.js {\n    .betterSettings-categoryTitle {\n        display: block;\n        margin-top: 0.5em;\n        margin-bottom: 0.3em;\n    }\n    .zm_multisetting .setting-span {\n        grid-template-columns: 210px 1fr;\n    }\n}\n';
+  var main_default = '#zm_data_div {\n    margin-bottom: 10px;\n}\n\n#canvasDiv {\n    overflow: hidden;\n    background-color: var(--opac-85);\n}\n\n#zm_floater_container:has(#zm_collapse[data-collapsed="true"]) {\n    width: calc(33px * var(--zm-floater-scale));\n\n    button:not(#zm_collapse) {\n        display: none;\n    }\n}\n\n#colorSelector {\n    z-index: 1;\n    right: 5px;\n}\n\n#zm_floater_container {\n    position: absolute;\n    display: grid;\n\n    right: 5px;\n    bottom: 5px;\n\n    width: calc(100px * var(--zm-floater-scale));\n    aspect-ratio: 1;\n\n    max-width: calc(200px * var(--zm-floater-scale));\n    max-height: calc(200px * var(--zm-floater-scale));\n\n    font-size: calc(120% * var(--zm-floater-scale));\n\n    color: var(--zm-floater-fg);\n    background-color: var(--zm-floater-bg);\n    border: 2px solid var(--zm-floater-fg);\n\n    button {\n        text-align: center;\n        border: 0px solid var(--zm-floater-fg);\n    }\n\n    button:where([data-pos="tl"]) { border-width: 0px 2px 2px 0px; }\n    button:where([data-pos="tr"]) { border-width: 2px 2px 0px 0px; }\n    button:where([data-pos="bl"]) { border-width: 0px 0px 2px 2px; }\n    button:where([data-pos="br"]) { border-width: 2px 0px 0px 2px; }\n}\n\n#canvasDiv:has(#colorSelector[style *= "block"]) #zm_floater_container {\n    bottom: 50px;\n}\n\n.zm_corner { border: 2px solid white; }\n\n#zm_collapse {\n    grid-row: 3;\n    grid-column: 3;\n\n    &[data-collapsed="true"] {\n        grid-row: 1;\n        grid-column: 1;\n        aspect-ratio: 1;\n        border-width: 0px;\n    }\n}\n\n#betterSettings\\/div\\/zoom\\.js .setting-span {\n    display: grid;\n    grid-template-columns: 230px 1fr;\n\n    &:has(> .toggleInput:first-child) {\n        display: grid;\n    }\n\n    input[type="color"] {\n        width: 100%;\n        border: none;\n    }\n\n    .toggleInput {\n        padding-right: 10%;\n        clip-path: none;\n        &:hover {\n            transform: initial;\n        }\n    }\n}\n\n#betterSettings\\/div\\/zoom\\.js {\n    .betterSettings-categoryTitle {\n        display: block;\n        margin-top: 0.5em;\n        margin-bottom: 0.3em;\n    }\n\n    .zm_multisetting .setting-span {\n        grid-template-columns: 210px 1fr;\n    }\n}\n';
 
   // assets/multisetting.css
   var multisetting_default = '.zm_multisetting {\n    margin-top: 0.75em;\n}\n.zm_ms_row {\n    display: grid;\n    grid-template-columns: 1.7em 1fr;\n}\n\n.zm_ms_row[data-current="true"] {\n    .zm_ms_selbtn {\n        background: var(--theme);\n    }\n}\n\n.zm_ms_row[data-current="false"] .setting-span {\n    opacity: 0.5;\n}\n\n.zm_ms_selbtn.zm_ms_selbtn:not(#_) {\n    align-items: center;\n    justify-content: center;\n    height: 100%;\n    width: calc(100% - 0.5em);\n    margin-right: 2px;\n    padding: 0px;\n    border: 2px solid var(--theme);\n    font-size: 1.5em;\n}\n\n.zm_ms_selbtn:active,\n.zm_ms_selbtn:active:hover {\n    transform: initial;\n}\n';
@@ -654,10 +676,12 @@
       this.floater_div.style.display = this.settings.show_floater.value ? "grid" : "none";
       this.zoom_data_div.style.display = this.settings.show_pos.value ? "block" : "none";
       this.canvas_div.style.backgroundColor = this.settings.canvas_bkg.value ?? "#252525";
-      document.documentElement.style.setProperty(
+      this.floater_div.style.setProperty(
         "--zm-floater-scale",
         this.settings.floater_scale.value.toString()
       );
+      this.floater_div.style.setProperty("--zm-floater-bg", this.settings.floater_bg.value);
+      this.floater_div.style.setProperty("--zm-floater-fg", this.settings.floater_fg.value);
     }
   };
 
