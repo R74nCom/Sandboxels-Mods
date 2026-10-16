@@ -1,204 +1,233 @@
-function getSelfMovingBehaviorFunctionNames() {
-    return Object.entries(behaviors)
-        .filter(([name, func]) => {
-            if (typeof func !== "function") return false;
-            if (["SEEDRISE"].includes(name)) return false;
+// Initialize the custom "Fatties" category if it doesn't exist
+if (!window.categoryMoveRow) { window.categoryMoveRow = []; }
+if (!window.elements) { window.elements = {}; }
 
-            const code = func.toString();
-
-            // Only allow if it's moving its own pixel
-            const selfMove = /movePixel\s*\(\s*pixel\s*,/.test(code) || /tryMove\s*\(\s*pixel\s*,/.test(code)
-                || /pixel\.(x|y)\s*[\+\-]=/.test(code);
-
-            return selfMove;
-        })
-        .map(([name]) => name);
-}
-
-const builtInMovementBehaviors = [
-    "M1", "M2","BO", "SP", "XX|M1", "M1|M2", "M1%", "M2%", "M1%|M2", 
-    "M1|M2%", "M1%|M2%", 'XX|M1%', 'M1%|XX', 'XX|M2%', 'M2%|XX'
-];
-
-function behaviorIncludesMovement(behaviorMatrix, movementFunctionNames) {
-    if (!Array.isArray(behaviorMatrix)) return false;
-
-    for (const row of behaviorMatrix) {
-        if (!Array.isArray(row)) continue;
-
-        for (const cell of row) {
-            if (typeof cell !== "string") continue;
-
-            // Handle "AND" logic: multiple behaviors in one cell
-            const andParts = cell.split("AND");
-
-            for (const andPart of andParts) {
-                const parts = andPart.trim().split("|").map(p => p.trim());
-                if (parts.some(p => builtInMovementBehaviors.includes(p) || movementFunctionNames.includes(p))) {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-
-runAfterAutogen(function () {
-    const movementFunctionNames = getSelfMovingBehaviorFunctionNames();
-
-    const movableElements = Object.entries(elements).filter(([name, elem]) => {
-        const behavior = elem.behavior;
-        const tick = elem.tick || elem.tickFunc;
-
-        let movesSelf = false;
-
-        // Check behavior matrix
-        if (Array.isArray(behavior)) {
-            movesSelf = behaviorIncludesMovement(behavior, movementFunctionNames);
-        }
-
-        // Check single string
-        else if (typeof behavior === "string") {
-            const parts = behavior.split("|").map(p => p.trim());
-            movesSelf = parts.some(p => builtInMovementBehaviors.includes(p) || movementFunctionNames.includes(p));
-        }
-
-        // Check function-type behavior
-        else if (typeof behavior === "function") {
-            movesSelf = movementFunctionNames.includes(behavior.name);
-        }
-
-        // Check tick function
-        if (!movesSelf && typeof tick === "function") {
-            const code = tick.toString();
-            if (/movePixel\s*\(\s*pixel\s*,/.test(code) || /tryMove\s*\(\s*pixel\s*,/.test(code) || /pixel\.(x|y)\s*[\+\-]=/.test(code)) {
-                movesSelf = true;
-            }
-        }
-
-        return movesSelf;
-    }).map(([name]) => name);
-
-    window.movableElementsByBehavior = movableElements;
-});
-
-
-
-
-// Create a global map to track delay for each position
-if (!window.fanPushDelays) {
-    window.fanPushDelays = new Map();
-}
-
-elements.fan_right = {
-    behavior: behaviors.WALL,
-    color: "#c5c5c5",
-    tick: function (pixel) {
-        const fan_strength = 10;
-        const delay_ticks = 2;
-
-        for (let i = 1; i <= fan_strength; i++) {
-            const x = pixel.x + i;
-            const y = pixel.y;
-
-            // SKIP if position is empty
-            if (isEmpty(x, y)) continue;
-
-            const delem = pixelMap[x]?.[y];
-            if (!delem) continue;
-
-            // Skip non-movable elements
-            if (!window.movableElementsByBehavior.includes(delem.element)) continue;
-
-            // Use position key for delay tracking
-            const key = `${x},${y}`;
-            const currentDelay = window.fanPushDelays.get(key) || 0;
-
-            if (currentDelay >= delay_ticks) {
-                window.fanPushDelays.set(key, 0);
-
-                const newX = x + 1;
-                if (isEmpty(newX, y)) {
-                    movePixel(delem, newX, y);
-                }
-            } else {
-                window.fanPushDelays.set(key, currentDelay + 1);
-            }
-        }
-    },
-    category: "machines"
+// Custom "Fatties" Category Setup
+elements.fatty_egg = {
+    color: "#f3e5ab",
+    behavior: behaviors.POWDER,
+    category: "Fatties",
+    state: "solid",
+    desc: "A small egg laid by Peson Bald Chickens. Hatches into a Fatty.",
+    tempHigh: 38,
+    chH: "fatty",
 };
 
-elements.fan_left = {
-    behavior: behaviors.WALL,
-    color: "#c5c5c5",
-    tick: function (pixel) {
-        const fan_strength = 10;
-        const delay_ticks = 2;
-
-        for (let i = 0; i >= -fan_strength; i--) {
-            const x = pixel.x + i;
-            const y = pixel.y;
-
-            // SKIP if position is empty
-            if (isEmpty(x, y)) continue;
-
-            const delem = pixelMap[x]?.[y];
-            if (!delem) continue;
-
-            // Skip non-movable elements
-            if (!window.movableElementsByBehavior.includes(delem.element)) continue;
-
-            // Use position key for delay tracking
-            const key = `${x},${y}`;
-            const currentDelay = window.fanPushDelays.get(key) || 0;
-
-            if (currentDelay >= delay_ticks) {
-                window.fanPushDelays.set(key, 0);
-
-                const newX = x - 1;
-                if (isEmpty(newX, y)) {
-                    movePixel(delem, newX, y);
-                }
-            } else {
-                window.fanPushDelays.set(key, currentDelay + 1);
+// 1. FATTIES (Light Yellow, Fast, Eat Foods, Run from Peacocks)
+elements.fatty = {
+    color: "#fff9ae", // Light Yellow
+    behavior: [
+        "XX|M2|XX",
+        "M2|WORM|M2", // WORM behavior blended with fast M2 movement
+        "XX|M2|XX"
+    ],
+    category: "Fatties",
+    state: "solid",
+    desc: "A fast, light yellow Fatty. Runs from Peacocks.",
+    tempHigh: 100,
+    chH: "cooked_meat",
+    tick: function(pixel) {
+        // Fast eating behavior for Foods category elements
+        let neighbors = [
+            {x: pixel.x+1, y: pixel.y}, {x: pixel.x-1, y: pixel.y},
+            {x: pixel.x, y: pixel.y+1}, {x: pixel.x, y: pixel.y-1}
+        ];
+        for (let n of neighbors) {
+            let target = pixelMap[n.x]?.[n.y];
+            if (target && elements[target.element]?.category === "foods") {
+                deletePixel(target.x, target.y);
             }
         }
-    },
-    category: "machines"
-};
-/*
-elements.fan_up = {
-    behavior: behaviors.WALL,
-    tick: function (pixel) {
-        let fan_strength = 10;
-        let delay_ticks = 0; // delay between pushes per pixel row
-        if (!pixel._fan_delay) pixel._fan_delay = 0;
-
-        if (pixel._fan_delay > 0) {
-            pixel._fan_delay--;
-            return;
-        }
-
-        for (let i = 1; i <= fan_strength; i++) {
-            const tx = pixel.x;
-            const ty = pixel.y - i;
-
-            if (!isEmpty(tx, ty)) {
-                const delem = pixelMap[tx]?.[ty];
-
-                if (!delem || !window.movableElementsByBehavior.includes(delem.element)) break;
-
-                const above = ty - 1;
-                if (isEmpty(tx, above)) {
-                    movePixel(delem, tx, above);
-                    pixel._fan_delay = delay_ticks;
-                    break; // only move one per tick
+        // Run away from Peacock
+        for (let x = -4; x <= 4; x++) {
+            for (let y = -4; y <= 4; y++) {
+                let target = pixelMap[pixel.x + x]?.[pixel.y + y];
+                if (target && target.element === "peacock") {
+                    let moveX = x > 0 ? -1 : 1;
+                    if (isEmpty(pixel.x + moveX, pixel.y)) {
+                        movePixel(pixel, pixel.x + moveX, pixel.y);
+                    }
+                    return;
                 }
             }
         }
     }
 };
-*/
+
+// 2. FATTOS (Slightly Darker Yellow, Normal Speed Worm, Smart, Run from Weapons)
+elements.fatto = {
+    color: "#ffec7a", // Darker Yellow
+    behavior: behaviors.WORM, // Regular worm speed
+    category: "Fatties",
+    state: "solid",
+    desc: "A round Fatto. Smart enough to run away from weapons.",
+    tempHigh: 100,
+    chH: "cooked_meat",
+    tick: function(pixel) {
+        // Eats elements in the foods category
+        let neighbors = [
+            {x: pixel.x+1, y: pixel.y}, {x: pixel.x-1, y: pixel.y},
+            {x: pixel.x, y: pixel.y+1}, {x: pixel.x, y: pixel.y-1}
+        ];
+        for (let n of neighbors) {
+            let target = pixelMap[n.x]?.[n.y];
+            if (target && elements[target.element]?.category === "foods") {
+                deletePixel(target.x, target.y);
+            }
+        }
+        // Run away from Weapons category elements
+        for (let x = -5; x <= 5; x++) {
+            for (let y = -5; y <= 5; y++) {
+                let target = pixelMap[pixel.x + x]?.[pixel.y + y];
+                if (target && elements[target.element]?.category === "weapons") {
+                    let moveX = x > 0 ? -1 : 1;
+                    if (isEmpty(pixel.x + moveX, pixel.y)) {
+                        movePixel(pixel, pixel.x + moveX, pixel.y);
+                    }
+                    return;
+                }
+            }
+        }
+    }
+};
+
+// 3. PESON BALD CHICKEN - MALE (Green Top, Brown Bottom, 2 Pixels Tall, Human Behavior, Avoids Weapons)
+elements.peson_bald_chicken_male = {
+    color: "#2e7d32", // Green Top
+    behavior: behaviors.HUMAN,
+    category: "Fatties",
+    state: "solid",
+    desc: "A male Peson Bald Chicken. Multi-pixel structure.",
+    tick: function(pixel) {
+        // Maintain 2-pixel tall structure with a brown bottom segment
+        let bottomX = pixel.x;
+        let bottomY = pixel.y + 1;
+        if (isEmpty(bottomX, bottomY)) {
+            createPixel("peson_chicken_bottom_male", bottomX, bottomY);
+        } else {
+            let bottomPixel = pixelMap[bottomX]?.[bottomY];
+            if (bottomPixel && bottomPixel.element !== "peson_chicken_bottom_male") {
+                createPixel("peson_chicken_bottom_male", bottomX, bottomY);
+            }
+        }
+        // Walk away from weapons
+        for (let x = -5; x <= 5; x++) {
+            let target = pixelMap[pixel.x + x]?.[pixel.y];
+            if (target && elements[target.element]?.category === "weapons") {
+                let moveX = x > 0 ? -1 : 1;
+                if (isEmpty(pixel.x + moveX, pixel.y)) {
+                    movePixel(pixel, pixel.x + moveX, pixel.y);
+                }
+                return;
+            }
+        }
+    }
+};
+
+elements.peson_chicken_bottom_male = {
+    color: "#5d4037", // Brown Bottom
+    behavior: behaviors.WALL,
+    category: "Fatties",
+    hidden: true,
+    tick: function(pixel) {
+        let topX = pixel.x;
+        let topY = pixel.y - 1;
+        let topPixel = pixelMap[topX]?.[topY];
+        if (!topPixel || topPixel.element !== "peson_bald_chicken_male") {
+            deletePixel(pixel.x, pixel.y);
+        }
+    }
+};
+
+// 4. PESON BALD CHICKEN - FEMALE (White Top, Pinkish-White Bottom, Lays Eggs, Avoids Weapons)
+elements.peson_bald_chicken_female = {
+    color: "#ffffff", // White Top
+    behavior: behaviors.HUMAN,
+    category: "Fatties",
+    state: "solid",
+    desc: "A female Peson Bald Chicken. Lays fatty eggs.",
+    tick: function(pixel) {
+        // Maintain 2-pixel tall structure with pinkish-white bottom
+        let bottomX = pixel.x;
+        let bottomY = pixel.y + 1;
+        if (isEmpty(bottomX, bottomY)) {
+            createPixel("peson_chicken_bottom_female", bottomX, bottomY);
+        } else {
+            let bottomPixel = pixelMap[bottomX]?.[bottomY];
+            if (bottomPixel && bottomPixel.element !== "peson_chicken_bottom_female") {
+                createPixel("peson_chicken_bottom_female", bottomX, bottomY);
+            }
+        }
+        // Randomly lay fatty eggs onto empty spaces beneath it
+        if (Math.random() < 0.01) {
+            let eggX = pixel.x;
+            let eggY = pixel.y + 2;
+            if (isEmpty(eggX, eggY)) {
+                createPixel("fatty_egg", eggX, eggY);
+            }
+        }
+        // Walk away from weapons
+        for (let x = -5; x <= 5; x++) {
+            let target = pixelMap[pixel.x + x]?.[pixel.y];
+            if (target && elements[target.element]?.category === "weapons") {
+                let moveX = x > 0 ? -1 : 1;
+                if (isEmpty(pixel.x + moveX, pixel.y)) {
+                    movePixel(pixel, pixel.x + moveX, pixel.y);
+                }
+                return;
+            }
+        }
+    }
+};
+
+elements.peson_chicken_bottom_female = {
+    color: "#fce4ec", // Pinkish-White Bottom
+    behavior: behaviors.WALL,
+    category: "Fatties",
+    hidden: true,
+    tick: function(pixel) {
+        let topX = pixel.x;
+        let topY = pixel.y - 1;
+        let topPixel = pixelMap[topX]?.[topY];
+        if (!topPixel || topPixel.element !== "peson_bald_chicken_female") {
+            deletePixel(pixel.x, pixel.y);
+        }
+    }
+};
+
+// 5. PEACOCK (Green Top, Blue Bottom, 2 Pixels Tall, Human Behavior)
+elements.peacock = {
+    color: "#2e7d32", // Green Top
+    behavior: behaviors.HUMAN,
+    category: "Fatties",
+    state: "solid",
+    desc: "A majestic peacock. 2 pixels tall.",
+    tick: function(pixel) {
+        // Maintain 2-pixel tall structure with blue bottom segment
+        let bottomX = pixel.x;
+        let bottomY = pixel.y + 1;
+        if (isEmpty(bottomX, bottomY)) {
+            createPixel("peacock_bottom", bottomX, bottomY);
+        } else {
+            let bottomPixel = pixelMap[bottomX]?.[bottomY];
+            if (bottomPixel && bottomPixel.element !== "peacock_bottom") {
+                createPixel("peacock_bottom", bottomX, bottomY);
+            }
+        }
+    }
+};
+
+elements.peacock_bottom = {
+    color: "#1565c0", // Blue Bottom
+    behavior: behaviors.WALL,
+    category: "Fatties",
+    hidden: true,
+    tick: function(pixel) {
+        let topX = pixel.x;
+        let topY = pixel.y - 1;
+        let topPixel = pixelMap[topX]?.[topY];
+        if (!topPixel || topPixel.element !== "peacock") {
+            deletePixel(pixel.x, pixel.y);
+        }
+    }
+};
