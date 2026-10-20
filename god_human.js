@@ -1,9 +1,9 @@
 // God Human mod for Sandboxels
 // Adds a "god_human" element (Life category) that:
-//  - can't be killed by heat, cold, explosions, breaking, or Nothing There projectiles
-//  - destroys Nothing There mob pixels within 2 pixels of it
+//  - can't be killed by heat, cold, explosions, breaking, or Nothing There phase 3 projectiles
+//  - destroys Nothing There phase 3 mob pixels within 2 pixels of it
 //  - walks with a slow, random shuffle
-// Load this AFTER mobs.js in the Mods manager.
+
 
 runAfterLoad(function () {
  try {
