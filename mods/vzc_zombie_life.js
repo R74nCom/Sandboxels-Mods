@@ -1,63 +1,95 @@
 
 /*
- * VZC Zombie Life 1.0
- * Sandboxels Mod
- * Author: VZC
- *
- * Elements:
- * - Zombie
- * - Zombie Virus
- * - Antivirus
- * - Rotten Flesh
- */
+====================================================
+ VZC ZOMBIE LIFE 1.1
+ Sandboxels Mod
+ Author: VZC
+====================================================
+
+ ELEMENTS:
+ 1. VZC Zombie
+ 2. VZC Zombie Virus
+ 3. VZC Antivirus
+ 4. VZC Rotten Flesh
+
+ CATEGORY:
+ Life (Sự sống)
+====================================================
+*/
 
 (function () {
     "use strict";
 
-    if (typeof elements === "undefined" ||
-        typeof behaviors === "undefined") {
+    // Kiểm tra Sandboxels API
+    if (
+        typeof elements === "undefined" ||
+        typeof behaviors === "undefined"
+    ) {
         console.error("[VZC Zombie Life] Sandboxels API not found!");
         return;
     }
 
+    // Lấy pixel tại tọa độ
     function getPixelAt(x, y) {
-        if (!pixelMap[x]) return null;
+        if (
+            x < 0 ||
+            y < 0 ||
+            x >= pixelMap.length ||
+            !pixelMap[x]
+        ) {
+            return null;
+        }
+
         return pixelMap[x][y] || null;
     }
 
+    // Các ô xung quanh
+    var directions = [
+        [-1, -1],
+        [0, -1],
+        [1, -1],
+        [-1, 0],
+        [1, 0],
+        [-1, 1],
+        [0, 1],
+        [1, 1]
+    ];
+
+    // ================================================
     // ZOMBIE AI
+    // ================================================
+
     function zombieTick(pixel) {
         if (!pixel || pixel.del) return;
+
         if (pixelTicks % 5 !== 0) return;
 
-        var directions = [
-            [-1,-1], [0,-1], [1,-1],
-            [-1,0],           [1,0],
-            [-1,1],  [0,1],  [1,1]
-        ];
-
-        // Infect nearby humans
+        // Lây nhiễm người ở gần
         for (var i = 0; i < directions.length; i++) {
             var nx = pixel.x + directions[i][0];
             var ny = pixel.y + directions[i][1];
 
             var neighbor = getPixelAt(nx, ny);
 
-            if (neighbor &&
+            if (
+                neighbor &&
                 neighbor.element === "human" &&
-                Math.random() < 0.22) {
-
+                Math.random() < 0.22
+            ) {
                 changePixel(neighbor, "vzc_zombie");
                 break;
             }
         }
 
-        // Random movement
+        // Di chuyển ngẫu nhiên
         if (Math.random() < 0.35) {
             var steps = [
-                [-1,0], [1,0],
-                [0,-1], [0,1],
-                [-1,1], [1,1]
+                [-1, 0],
+                [1, 0],
+                [0, -1],
+                [0, 1],
+                [-1, 1],
+                [1, 1]
             ];
 
             var step = steps[
@@ -72,23 +104,20 @@
             }
         }
 
-        // Heat damage
+        // Nhiệt độ cao làm zombie phân hủy
         if (pixel.temp > 120) {
             changePixel(pixel, "vzc_rotten_flesh");
         }
     }
 
+    // ================================================
     // ZOMBIE VIRUS
+    // ================================================
+
     function virusTick(pixel) {
         if (!pixel || pixel.del) return;
-        if (pixelTicks % 4 !== 0) return;
 
-        var directions = [
-            [-1,0], [1,0],
-            [0,-1], [0,1],
-            [-1,-1], [1,-1],
-            [-1,1], [1,1]
-        ];
+        if (pixelTicks % 4 !== 0) return;
 
         for (var i = 0; i < directions.length; i++) {
             var nx = pixel.x + directions[i][0];
@@ -96,27 +125,25 @@
 
             var neighbor = getPixelAt(nx, ny);
 
-            if (neighbor &&
+            if (
+                neighbor &&
                 neighbor.element === "human" &&
-                Math.random() < 0.12) {
-
+                Math.random() < 0.12
+            ) {
                 changePixel(neighbor, "vzc_zombie");
                 break;
             }
         }
     }
 
+    // ================================================
     // ANTIVIRUS
-    function cureTick(pixel) {
-        if (!pixel || pixel.del) return;
-        if (pixelTicks % 4 !== 0) return;
+    // ================================================
 
-        var directions = [
-            [-1,0], [1,0],
-            [0,-1], [0,1],
-            [-1,-1], [1,-1],
-            [-1,1], [1,1]
-        ];
+    function antivirusTick(pixel) {
+        if (!pixel || pixel.del) return;
+
+        if (pixelTicks % 4 !== 0) return;
 
         for (var i = 0; i < directions.length; i++) {
             var nx = pixel.x + directions[i][0];
@@ -124,10 +151,11 @@
 
             var neighbor = getPixelAt(nx, ny);
 
-            if (neighbor &&
+            if (
+                neighbor &&
                 neighbor.element === "vzc_zombie" &&
-                Math.random() < 0.30) {
-
+                Math.random() < 0.30
+            ) {
                 changePixel(neighbor, "human");
                 deletePixel(pixel.x, pixel.y);
                 return;
@@ -135,74 +163,109 @@
         }
     }
 
+    // ================================================
     // ZOMBIE
+    // ================================================
+
     elements.vzc_zombie = {
         color: [
             "#526b35",
             "#647d3e",
             "#3e542b"
         ],
+
         behavior: behaviors.WALL,
+
         category: "life",
         state: "solid",
+
         density: 1080,
         hardness: 0.15,
+
         temp: 25,
+
         tick: zombieTick,
-        desc: "A slow infected creature that infects humans."
+
+        desc: "An infected creature that can infect nearby humans."
     };
 
-    // VIRUS
+    // ================================================
+    // ZOMBIE VIRUS
+    // ================================================
+
     elements.vzc_zombie_virus = {
         color: [
             "#78b83e",
             "#9bd64c",
             "#527f2b"
         ],
+
         behavior: behaviors.LIQUID,
-        category: "liquids",
+
+        category: "life",
         state: "liquid",
+
         density: 1030,
         viscosity: 650,
+
         temp: 25,
+
         tick: virusTick,
+
         desc: "An infectious liquid that can infect humans."
     };
 
+    // ================================================
     // ANTIVIRUS
+    // ================================================
+
     elements.vzc_antivirus = {
         color: [
             "#4bd7e8",
             "#8cf0f4",
             "#27a9c5"
         ],
+
         behavior: behaviors.LIQUID,
-        category: "liquids",
+
+        category: "life",
         state: "liquid",
+
         density: 1000,
         viscosity: 500,
+
         temp: 20,
-        tick: cureTick,
-        desc: "A cure that can restore zombies into humans."
+
+        tick: antivirusTick,
+
+        desc: "A medicine that can restore zombies into humans."
     };
 
+    // ================================================
     // ROTTEN FLESH
+    // ================================================
+
     elements.vzc_rotten_flesh = {
         color: [
             "#66513c",
             "#806347",
             "#4d4031"
         ],
+
         behavior: behaviors.POWDER,
-        category: "powders",
+
+        category: "life",
         state: "solid",
+
         density: 920,
+
         temp: 20,
+
         desc: "Rotten remains of an overheated zombie."
     };
 
     console.log(
-        "[VZC Zombie Life] Loaded successfully!"
+        "[VZC Zombie Life 1.1] Loaded successfully!"
     );
 
 })();
