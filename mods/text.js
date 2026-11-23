@@ -25,7 +25,7 @@ function drawText(font, text, position, element, scale = 1) {
 		}
 
 		// Get the character's pixel representation from the font
-		const charArray = font[char];
+		let charArray = font[char];
 		if (!charArray) {
 			charArray = font["invalid"]
 		}
